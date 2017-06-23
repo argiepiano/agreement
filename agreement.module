@@ -99,6 +99,16 @@ function agreement_menu() {
     'type'              => MENU_LOCAL_ACTION,
   );
 
+  $items['admin/config/people/agreement/manage/%agreement_type/reset'] = array(
+    'access arguments'  => array('administer agreements'),
+    'file'              => 'agreement.admin.inc',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('agreement_type_reset_form', 5),
+    'title'             => 'Reset',
+    'type'              => MENU_LOCAL_TASK,
+    'weight'            => 1,
+  );
+
   $items['admin/config/people/agreement/manage/%agreement_type/delete'] = array(
     'access arguments'  => array('administer agreements'),
     'file'              => 'agreement.admin.inc',
@@ -106,7 +116,7 @@ function agreement_menu() {
     'page arguments'    => array('agreement_type_delete_form', 5),
     'title'             => 'Remove',
     'type'              => MENU_LOCAL_TASK,
-    'weight'            => 1,
+    'weight'            => 2,
   );
 
   $types = agreement_type_load(NULL, FALSE);
@@ -133,14 +143,13 @@ function agreement_menu() {
  * Implements hook_user_update().
  */
 function agreement_user_update(&$edit, &$account, $category = NULL) {
-
   global $user;
   $types = agreement_type_load();
 
   foreach ($types as $name => $info) {
     // Do not require user to re-accept agreement if they've just changed their
     // password.
-    if ($info['settings']['frequency'] &&
+    if ($info['settings']['frequency'] === 0 &&
         !empty($edit['pass']) &&
         $account->uid === $user->uid) {
       agreement_agree($account, $name, 2);
@@ -334,8 +343,22 @@ function agreement_has_agreed($account, $info) {
     ->condition('uid', $account->uid)
     ->range(0, 1);
 
-  if ($info['settings']['frequency'] == 1) {
+  if ($info['settings']['frequency'] == 0) {
+    // Must agree on every login.
     $query->condition('sid', session_id());
+  }
+  else {
+    // Must agree when frequency is set greater than zero (number of days).
+    if ($info['settings']['frequency'] > 0) {
+      $frequency_timestamp = time() - ($info['settings']['frequency'] * 24 * 60 * 60);
+    }
+    else {
+      $frequency_timestamp = 0;
+    }
+    $timestamp = max($info['settings']['reset_date'], $frequency_timestamp);
+    if ($timestamp > 0) {
+      $query->condition('agreed_date', $timestamp, '>=');
+    }
   }
 
   return $query->execute()->fetchField();
@@ -436,6 +459,10 @@ function agreement_type_get_best_match($account, $path) {
  * @param object $uid
  *   (Optional) UID for which the status should be checked. Defaults to current
  *   user.
+ * @param int $frequency
+ *   (Optional) Frequency. This is here for legacy purposes.
+ * @param int $reset
+ *   (Optional) Whether a "reset" has occurred on the agreement.
  *
  * @return bool
  *   if agreement found in db.
@@ -444,7 +471,7 @@ function agreement_type_get_best_match($account, $path) {
  *
  * @internal
  */
-function _agreement_status($uid = NULL) {
+function _agreement_status($uid = NULL, $frequency = 0, $reset = 0) {
   // If the UID is not specified, use the current user.
   if (empty($uid)) {
     global $user;
@@ -458,11 +485,25 @@ function _agreement_status($uid = NULL) {
   $query
     ->fields('a', array('agreed'))
     ->condition('a.uid', $uid, '=')
+    ->condition('a.name', 'default', '=')
     ->range(0, 1);
 
   // Must agree on every login.
-  if (variable_get('agreement_frequency', 0) == 1) {
+  if ($frequency == 0) {
     $query->condition('a.sid', session_id(), '=');
+  }
+  else {
+    // Must agree when frequency is set greater than zero (number of days).
+    if ($frequency > 0) {
+      $frequency_timestamp = time() - ($frequency * 24 * 60 * 60);
+    }
+    else {
+      $frequency_timestamp = 0;
+    }
+    $timestamp = max($reset, $frequency_timestamp);
+    if ($timestamp > 0) {
+      $query->condition('agreed_date', $timestamp, '>=');
+    }
   }
 
   return $query->execute()->fetchField();
@@ -485,6 +526,11 @@ function _agreement_admin_form_submit($form, &$form_state) {
   if ($form_state['values']['agreement_page_url'] !== $form['agreement_page_url']['#default_value'] ||
       $form_state['values']['agreement_page_title'] !== $form['agreement_page_title']['#default_value']) {
     menu_rebuild();
+  }
+
+  // If they selected to force re-acceptance of the agreement for every user.
+  if (!empty($form_state['values']['agreement_clear'])) {
+    variable_set('agreement_reset', time());
   }
 }
 

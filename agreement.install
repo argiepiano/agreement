@@ -31,6 +31,7 @@ function _agreement_default_agreement() {
       'visibility_settings' => variable_get('agreement_page_visibility_settings', 0),
       'visibility_pages' => variable_get('agreement_page_visibility_pages', ''),
       'email_recipient' => variable_get('agreement_email_recipient', ''),
+      'reset_date' => variable_get('agreement_reset', 0),
     ),
   );
   return $default;
@@ -248,4 +249,26 @@ function agreement_update_7202() {
   }
 
   return t('Added default agreement type.');
+}
+
+/**
+ * 7203: Update the stored agreement frequency.
+ */
+function agreement_update_7203() {
+  $agreements = agreement_type_load();
+
+  if (!empty($agreements)) {
+    $names = array_keys($agreements);
+    foreach ($agreements as $name => $info) {
+      $frequency = $info['settings']['frequency'];
+      $info['settings']['reset_date'] = $name === 'default' ? variable_get('agreement_reset', 0) : 0;
+      $info['settings']['frequency'] = $frequency == 0 ? -1 : 0;
+
+      agreement_type_save($info);
+    }
+    $name_string = implode(' ', $names);
+    return t('Updated frequency and added reset_date to the following agreements: !names', array('!names' => $name_string));
+  }
+
+  return t('No agreement types to update.');
 }

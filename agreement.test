@@ -349,7 +349,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
     $this->isNotAgreementPage($this->agreement);
 
     // B) Agreement required on every login.
-    $this->agreement['settings']['frequency'] = 1;
+    $this->agreement['settings']['frequency'] = 0;
     agreement_type_save($this->agreement);
     $this->agreement = agreement_type_load($this->agreement['name'], FALSE);
 

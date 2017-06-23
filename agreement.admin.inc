@@ -42,6 +42,10 @@ function agreement_type_overview() {
         'title' => t('Modify'),
         'href'  => 'admin/config/people/agreement/manage/' . $name,
       ),
+      'reset' => array(
+        'title' => t('Reset'),
+        'href' => 'admin/config/people/agreement/manage/' . $name . '/reset',
+      ),
       'delete' => array(
         'title' => t('Remove'),
         'href'  => 'admin/config/people/agreement/manage/' . $name . '/delete',
@@ -135,7 +139,11 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
   $form['settings']['frequency'] = array(
     '#description'    => t('How often should users be required to accept the agreement?'),
     '#default_value'  => !$is_new ? $info['settings']['frequency'] : 0,
-    '#options'        => array(t('Only once'), t('On every log in')),
+    '#options'        => array(
+      -1 => t('Only once'),
+      0 => t('On every log in'),
+      365 => t('Once a year'),
+    ),
     '#required'       => TRUE,
     '#title'          => t('Frequency'),
     '#type'           => 'select',
@@ -231,7 +239,7 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
                               '%blog-wildcard'  => 'blog/*',
                               '%front'          => '<front>',
                             )
-                          ),
+                         ),
   );
 
   $form['settings']['email_recipient'] = array(
@@ -463,4 +471,62 @@ function agreement_type_delete_form_submit($form, &$form_state) {
       'error'
     );
   }
+}
+
+/**
+ * Provides an interface to reset all agreements for an agreement type.
+ *
+ * @param array $form
+ *   The form array.
+ * @param array &$form_state
+ *   The form state array.
+ * @param array $info
+ *   The agreement type.
+ *
+ * @return array
+ *   The form array.
+ */
+function agreement_type_reset_form($form, &$form_state, $info) {
+  $form_state['agreement'] = $info;
+
+  $form['confirm_message'] = array(
+    '#markup' => t('Force all users to re-accept the @type agreement?', array('@type' => $info['type'])),
+  );
+  $form['confirm'] = array(
+    '#type' => 'hidden',
+    '#value' => 1,
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm'),
+  );
+  $form['actions']['cancel'] = array(
+    '#type' => 'link',
+    '#title' => t('Cancel'),
+    '#href' => 'admin/config/people/agreement',
+    '#options' => array(),
+  );
+
+  return $form;
+}
+
+/**
+ * Reset agreement type form submit.
+ *
+ * @param array $form
+ *   The form array.
+ * @param array &$form_state
+ *   The form state array.
+ */
+function agreement_type_reset_form_submit($form, &$form_state) {
+  $info = $form_state['agreement'];
+  $info['settings']['reset_date'] = time();
+
+  agreement_type_save($info);
+
+  drupal_set_message(t('All users will be forced to re-accept the @type agreement.', array('@type' => $info['type'])));
+
+  $form_state['redirect'] = 'admin/config/people/agreement';
 }
