@@ -548,6 +548,12 @@ class AgreementMultipleTestCase extends AgreementTestCase {
     $this->drupalPost(NULL, $edit, $new_agreement['settings']['submit']);
     $this->isNotAgreementPage($new_agreement);
     $this->isNotAgreementPage($this->agreement);
+
+    // Remove the second agreement.
+    $this->drupalLogin($this->privilegedUser);
+    $this->drupalPost('admin/config/people/agreement/manage/' . $settings['name'] . '/delete', array(), t('Confirm'));
+    $agreement_type_delete_success = 'Successfully deleted agreement type, ' . $settings['type'];
+    $this->assertText($agreement_type_delete_success, 'Found agreement type deleted message.');
   }
 
 }

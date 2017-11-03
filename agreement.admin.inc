@@ -446,13 +446,12 @@ function agreement_type_delete_form($form, &$form_state, $info) {
 function agreement_type_delete_form_submit($form, &$form_state) {
   try {
     $transaction = db_transaction();
-
     db_delete('agreement_type')
-      ->condition('name', $form_state['name'])
+      ->condition('name', $form_state['build_info']['args']['0']['name'])
       ->execute();
 
     db_delete('agreement')
-      ->condition('type', $form_state['name'])
+      ->condition('type', $form_state['build_info']['args']['0']['type'])
       ->execute();
 
     drupal_set_message(t('Successfully deleted agreement type, %name', array('%name' => $form_state['name'])));
