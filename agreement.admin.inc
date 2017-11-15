@@ -255,12 +255,14 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
     '#type'  => 'submit',
     '#value' => t('Save configuration'),
   );
+  $destination = agreement_settings_form_get_destination('admin/config/people/agreement');
   $form['actions']['cancel'] = array(
     '#options' => array(
       'attributes' => array(),
       'html' => FALSE,
+      'query' => $destination['query'],
     ),
-    '#path'    => isset($destination['destination']) ? $destination['destination'] : 'admin/config/people/agreement',
+    '#path'    => $destination['path'],
     '#text'    => t('Cancel'),
     '#theme'   => 'link',
     '#weight'  => 10,
@@ -340,6 +342,25 @@ function agreement_settings_form_validate($form, &$form_state) {
 }
 
 /**
+ * Get the redirect path based on destination, if it exists.
+ *
+ * @param string $default_path
+ *   The default path to use if destination does not exist.
+ *
+ * @return array
+ *   The path array to use in the link or redirect.
+ */
+function agreement_settings_form_get_destination($default_path) {
+  $destination = drupal_get_destination();
+  $options = array('path' => $default_path);
+  if (isset($destination['destination'])) {
+    $options = drupal_parse_url($destination['destination']);
+  }
+
+  return $options;
+}
+
+/**
  * Agreement settings form submit callback.
  *
  * @param array $form
@@ -353,8 +374,9 @@ function agreement_settings_form_submit($form, &$form_state) {
   $info = _agreement_extract_values_to_type($form_state['values']);
   $new = array_replace_recursive($form_state['agreement'], $info);
 
-  $destination = drupal_get_destination();
-  $form_state['redirect'] = isset($destination['destination']) ? $destination['destination'] : 'admin/config/people/agreement';
+  $destination = agreement_settings_form_get_destination('admin/config/people/agreement');
+  $options = array_intersect_key($destination, array('query' => array(), 'fragement' => array()));
+  $form_state['redirect'] = array($destination['path'], $options);
 
   // Rebuilds the menu cache if the path URL or page title changes.
   if ($is_new || $form_state['values']['path'] !== $form_state['agreement'] ||
