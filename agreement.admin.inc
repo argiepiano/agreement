@@ -185,7 +185,7 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
 
   $form['settings']['submit'] = array(
     '#description'    => t('This text will be displayed on the "Submit" button.'),
-    '#default_value'  => !$is_new ? $info['settings']['submit'] : agreement_get_translated_message('AGREEMENT_CHECKBOX_TEXT'),
+    '#default_value'  => !$is_new ? $info['settings']['submit'] : agreement_get_translated_message('AGREEMENT_SUBMIT_TEXT'),
     '#required'       => TRUE,
     '#title'          => t('Agreement Submit Text'),
     '#type'           => 'textfield',
@@ -217,6 +217,13 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
     '#type'           => 'textfield',
   );
 
+  $form['settings']['revoked'] = array(
+    '#description'    => t('What message should be displayed to the users if they revoke their agreement?'),
+    '#default_value'  => !$is_new ? $info['settings']['revoked'] : agreement_get_translated_message('AGREEMENT_MESSAGE_REVOKED'),
+    '#title'          => t('Agreement Revoke Message'),
+    '#type'           => 'textfield',
+  );
+
   $form['settings']['visibility_settings'] = array(
     '#type'           => 'radios',
     '#title'          => t('Show agreement on specific pages'),
@@ -239,7 +246,7 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
                               '%blog-wildcard'  => 'blog/*',
                               '%front'          => '<front>',
                             )
-                         ),
+    ),
   );
 
   $form['settings']['email_recipient'] = array(

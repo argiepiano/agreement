@@ -13,6 +13,9 @@
  *
  * @return string
  *   HTML output.
+ *
+ * @throws \Exception
+ *   Wrapped exception from theme().
  */
 function agreement_page($agreement_type) {
   global $user;
@@ -66,12 +69,14 @@ function agreement_form($form, &$form_state, $status, $info, $account) {
 
   $form_state['account'] = $account;
   $form_state['info'] = $info;
+  $form_state['agreed'] = $status;
+  $can_revoke = user_access('revoke own agreement');
 
   // Only display the agree checkbox and submit button when the user needs to
   // agree. All other users may only see the agreement.
-  if (!$status &&
-     !user_access('bypass agreement') &&
-     array_key_exists($info['settings']['role'], $account->roles)) {
+  if ((!$status || $can_revoke) &&
+      !user_access('bypass agreement') &&
+      array_key_exists($info['settings']['role'], $account->roles)) {
     $form['agree'] = array(
       '#default_value'  => $status,
       '#title'          => check_plain($info['settings']['checkbox']),
@@ -96,7 +101,7 @@ function agreement_form($form, &$form_state, $status, $info, $account) {
  * @see agreement_form_submit()
  */
 function agreement_form_validate($form, &$form_state) {
-  if (!$form_state['values']['agree']) {
+  if (!$form_state['values']['agree'] && !$form_state['agreed']) {
     form_set_error('agree', check_plain($form_state['info']['settings']['failure']));
   }
 }
@@ -114,16 +119,19 @@ function agreement_form_submit($form, &$form_state) {
   $info = $form_state['info'];
   $uid = $account->uid;
   $agree = $form_state['values']['agree'];
+  $had_agreed = $form_state['agreed'];
 
   try {
     $transaction = db_transaction();
-    agreement_agree($account, $info['name']);
-    drupal_set_message(check_plain($info['settings']['success']));
+    $mail_key = $agree ? 'notice' : 'revoked';
+    $message = $agree ? $info['settings']['success'] : $info['settings']['revoked'];
+    agreement_agree($account, $info['name'], $agree);
+    drupal_set_message(check_plain($message));
 
     // Send email notifying of acceptance if admin has set an email address.
-    if ($info['settings']['email_recipient']) {
+    if ($info['settings']['email_recipient'] && (!$had_agreed || !$agree)) {
       $params['account'] = $account;
-      drupal_mail('agreement', 'notice', $info['settings']['email_recipient'], user_preferred_language($account), $params);
+      drupal_mail('agreement', $mail_key, $info['settings']['email_recipient'], user_preferred_language($account), $params);
     }
 
     $agreement_success_destination = str_replace(

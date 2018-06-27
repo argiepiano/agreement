@@ -488,7 +488,7 @@ class AgreementMultipleTestCase extends AgreementTestCase {
    */
   public static function getInfo() {
     return array(
-      'name' => '5. Multiple Agreements',
+      'name' => '5. Multiple agreements',
       'description' => 'Ensure that multiple agreements functional together.',
       'group' => 'Agreement',
     );
@@ -554,6 +554,67 @@ class AgreementMultipleTestCase extends AgreementTestCase {
     $this->drupalPost('admin/config/people/agreement/manage/' . $settings['name'] . '/delete', array(), t('Confirm'));
     $agreement_type_delete_success = 'Successfully deleted agreement type, ' . $settings['type'];
     $this->assertText($agreement_type_delete_success, 'Found agreement type deleted message.');
+  }
+
+}
+
+/**
+ * Tests revoke agreement functionality.
+ */
+class AgreementRevokeTestCase extends AgreementTestCase {
+
+  protected $revokeUser;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => '6. Agreement page - revoke',
+      'description' => 'Tests the "revoke agreement" functionality',
+      'group' => 'Agreement',
+    );
+  }
+
+  /**
+   * Asserts that a user that has agreed can revoke the agreement.
+   */
+  public function testAgreement() {
+    $this->revokeUserLogin();
+
+    // Try submitting agreement form.
+    $this->submitAgreementFormWithAgreeing($this->revokeUser->uid);
+
+    // Revokes the agreement.
+    $this->submitAgreementFormWithRevoking();
+
+    // Assert agreement page after revoking.
+    $this->drupalGet('node/' . $this->node->nid);
+    $this->isAgreementPage($this->agreement);
+
+    // Assert that the user can re-accept the agreement.
+    $this->submitAgreementFormWithAgreeing($this->revokeUser->uid);
+  }
+
+  /**
+   * Submits agreement form using the Revoke button.
+   */
+  protected function submitAgreementFormWithRevoking() {
+    // Submit with checking the I agree box.
+    $field_values['agree'] = FALSE;
+    $this->drupalPost('agreement', $field_values, $this->agreement['settings']['submit']);
+    $this->assertText($this->agreement['settings']['revoked'], t('Correct success message'));
+  }
+
+  /**
+   * Creates an user with the "revoke own agreement" permission and login.
+   *
+   * @param string $destination
+   *   An optional destination to go to on login.
+   */
+  protected function revokeUserLogin($destination = 'user') {
+    $this->revokeUser = $this->drupalCreateUser(array('access content', 'revoke own agreement'));
+    $this->drupalLogin($this->revokeUser, $destination);
   }
 
 }

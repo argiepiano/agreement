@@ -25,6 +25,7 @@ function _agreement_default_agreement() {
       'frequency' => variable_get('agreement_frequency', 0),
       'success' => variable_get('agreement_message_success', 'Thank you for accepting our agreement.'),
       'failure' => variable_get('agreement_message_failure', 'You must accept our agreement to continue.'),
+      'revoked' => variable_get('agreement_message_revoked', 'You successfully revoked your acceptance of our agreement.'),
       'checkbox' => variable_get('agreement_checkbox_text', 'I agree.'),
       'submit' => variable_get('agreement_submit_text', 'Submit'),
       'destination' => variable_get('agreement_success_destination', ''),
@@ -151,6 +152,7 @@ function agreement_uninstall() {
   variable_del('agreement_page_url');
   variable_del('agreement_message_success');
   variable_del('agreement_message_failure');
+  variable_del('agreement_message_revoked');
   variable_del('agreement_checkbox_text');
   variable_del('agreement_submit_text');
   variable_del('agreement_success_destination');
@@ -268,6 +270,27 @@ function agreement_update_7203() {
     }
     $name_string = implode(' ', $names);
     return t('Updated frequency and added reset_date to the following agreements: !names', array('!names' => $name_string));
+  }
+
+  return t('No agreement types to update.');
+}
+
+/**
+ * 7204: Update agreements with default values for revoke agreement.
+ */
+function agreement_update_7204() {
+  $default_revoke_message = agreement_get_translated_message('AGREEMENT_MESSAGE_REVOKED');
+  $agreements = agreement_type_load();
+
+  if (!empty($agreements)) {
+    $names = array_keys($agreements);
+    foreach ($agreements as $name => $info) {
+      $info['settings']['revoked'] = $default_revoke_message;
+
+      agreement_type_save($info);
+    }
+    $name_string = implode(' ', $names);
+    return t('Updated agreements: !names', array('!names' => $name_string));
   }
 
   return t('No agreement types to update.');

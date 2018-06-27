@@ -19,6 +19,9 @@ function agreement_permission() {
     'bypass agreement' => array(
       'title' => t('Bypass agreement'),
     ),
+    'revoke own agreement' => array(
+      'title' => t('Revoke own agreement'),
+    ),
   );
 }
 
@@ -180,6 +183,15 @@ function agreement_mail($key, &$message, $params) {
       );
       $message['subject'] = t('!site-name: !username accepted agreement', $variables, array('langcode' => $message['language']->language));
       $message['body'][] = t('The user has accepted the agreement.');
+      break;
+
+    case 'revoked':
+      $variables = array(
+        '!site-name' => variable_get('site_name', 'Drupal'),
+        '!username' => format_username($params['account']),
+      );
+      $message['subject'] = t('!site-name: !username revoked acceptance of agreement', $variables, array('langcode' => $message['language']->language));
+      $message['body'][] = t('The user has revoked their acceptance of the agreement.');
       break;
   }
 }
@@ -568,6 +580,7 @@ function _agreement_get_translated_messages() {
       'AGREEMENT_PAGE_TITLE' => t('Our Agreement'),
       'AGREEMENT_MESSAGE_SUCCESS' => t('Thank you for accepting our agreement.'),
       'AGREEMENT_MESSAGE_FAILURE' => t('You must accept our agreement to continue.'),
+      'AGREEMENT_MESSAGE_REVOKED' => t('You successfully revoked your acceptance of our agreement.'),
       'AGREEMENT_CHECKBOX_TEXT' => t('I agree.'),
       'AGREEMENT_SUBMIT_TEXT' => t('Submit'),
       'AGREEMENT_FORMAT' => filter_default_format(),
