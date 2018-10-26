@@ -367,6 +367,7 @@ function agreement_has_agreed($account, $info) {
     else {
       $frequency_timestamp = 0;
     }
+    $reset_date = isset($info['settings']['reset_date']) ? $info['settings']['reset_date'] : 0;
     $timestamp = max($info['settings']['reset_date'], $frequency_timestamp);
     if ($timestamp > 0) {
       $query->condition('agreed_date', $timestamp, '>=');
