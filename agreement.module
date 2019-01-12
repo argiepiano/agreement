@@ -434,9 +434,10 @@ function agreement_type_get_best_match($account, $path) {
     return FALSE;
   }
 
-  // Reduce the agreement types based on the user role.
+  // Reduce the agreement types based on the agreement restricted roles.
+  $account_roles = array_keys($account->roles);
   $role_types = array_reduce($types, function (&$result, $item) use ($account) {
-    if (array_key_exists($item['settings']['role'], $account->roles)) {
+    if (_agreement_user_has_role($account, $item['settings']['role'])) {
       $result[$item['name']] = $item;
     }
     return $result;
@@ -589,4 +590,21 @@ function _agreement_get_translated_messages() {
   }
 
   return $agreement_constants;
+}
+
+/**
+ * Checks if user has agreement roles.
+ *
+ * @param object $account
+ *   The user account.
+ * @param array $role_ids
+ *   The role ids to check.
+ *
+ * @return bool
+ *   TRUE if the user's roles intersect with the provided role ids.
+ */
+function _agreement_user_has_role($account, $role_ids) {
+  $account_roles = array_keys($account->roles);
+
+  return !empty(array_intersect($role_ids, $account_roles));
 }

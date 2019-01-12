@@ -134,6 +134,7 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
     '#required'       => TRUE,
     '#title'          => t('User role'),
     '#type'           => 'select',
+    '#multiple'       => TRUE,
   );
 
   $form['settings']['frequency'] = array(
@@ -408,6 +409,14 @@ function agreement_settings_form_submit($form, &$form_state) {
 function _agreement_extract_values_to_type($values) {
   $keys = array('settings', 'name', 'type', 'path', 'agreement');
 
+  $role_values = isset($values['settings']['role']) ? $values['settings']['role'] : array();
+  $values['settings']['role'] = array();
+  foreach ($role_values as $key => $value) {
+    if ($value) {
+      $values['settings']['role'][] = $key;
+    }
+  }
+
   $info = drupal_map_assoc($keys, function ($key) use ($values) {
     if (isset($values[$key])) {
       if ($key === 'agreement') {
@@ -421,7 +430,7 @@ function _agreement_extract_values_to_type($values) {
   $info['settings']['format'] = $values['agreement']['format'];
 
   // Enforce data types on options values.
-  $options_keys = array('frequency', 'visibility_settings', 'role');
+  $options_keys = array('frequency', 'visibility_settings');
   foreach ($options_keys as $option) {
     $info['settings'][$option] = (integer) $info['settings'][$option];
   }

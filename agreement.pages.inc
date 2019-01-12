@@ -76,7 +76,7 @@ function agreement_form($form, &$form_state, $status, $info, $account) {
   // agree. All other users may only see the agreement.
   if ((!$status || $can_revoke) &&
       !user_access('bypass agreement') &&
-      array_key_exists($info['settings']['role'], $account->roles)) {
+      _agreement_user_has_role($account, $info['settings']['role'])) {
     $form['agree'] = array(
       '#default_value'  => $status,
       '#title'          => check_plain($info['settings']['checkbox']),

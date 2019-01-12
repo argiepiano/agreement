@@ -618,3 +618,143 @@ class AgreementRevokeTestCase extends AgreementTestCase {
   }
 
 }
+
+/**
+ * Tests multiple roles applying to an agreement.
+ */
+class AgreementMultipleRoleTestCase extends AgreementTestCase {
+
+  /**
+   * First required role ID.
+   *
+   * @var int
+   */
+  protected $requiredRole;
+
+  /**
+   * Second required role ID.
+   *
+   * @var int
+   */
+  protected $requiredSecondRole;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => '7. Agreement page - Multiple roles',
+      'description' => 'Tests an agreement that applies to multiple roles.',
+      'group' => 'Agreement',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+
+    // Create the roles.
+    $this->requiredRole = $this->drupalCreateRole(['access content'], 'first role');
+    $this->requiredSecondRole = $this->drupalCreateRole(['access content', 'create page content'], 'second role');
+
+    // Set the agreement to use the roles from the two required users.
+    $this->drupalLogin($this->privilegedUser);
+    $role_ids = array($this->requiredRole, $this->requiredSecondRole);
+    $settings = array(
+      'settings[role][]' => $role_ids,
+    );
+    $this->configureAgreementSettings($settings);
+    $this->agreement = agreement_type_load('default', FALSE);
+    $this->assertEqual($this->agreement['settings']['role'], $role_ids, 'Agreement roles saved successfully.');
+    $this->drupalLogout();
+  }
+
+  /**
+   * Asserts that the user with the first role gets the agreement page.
+   */
+  public function testAgreementForFirstRole() {
+    // Creates user, login and assert agreement page.
+    $requiredUser = $this->requiredUserLogin($this->requiredRole, 'first role');
+    $this->isAgreementPage($this->agreement);
+
+    // Go to front page, no agreement.
+    $this->drupalGet('node');
+    $this->isNotAgreementPage($this->agreement);
+
+    // Go anywhere else, open agreement.
+    $this->drupalGet('user/' . $requiredUser->uid);
+    $this->isAgreementPage($this->agreement);
+
+    // Try submitting agreement form.
+    $this->submitAgreementFormWithoutAgreeing($requiredUser->uid);
+    $this->submitAgreementFormWithAgreeing($requiredUser->uid);
+  }
+
+  /**
+   * Asserts that the user with the second role gets the agreement page.
+   */
+  public function testAgreementForSecondRole() {
+    // Creates user, login and assert agreement page.
+    $requiredUser = $this->requiredUserLogin($this->requiredSecondRole, 'second role');
+    $this->isAgreementPage($this->agreement);
+
+    // Go to front page, no agreement.
+    $this->drupalGet('node');
+    $this->isNotAgreementPage($this->agreement);
+
+    // Go anywhere else, open agreement.
+    $this->drupalGet('user/' . $requiredUser->uid);
+    $this->isAgreementPage($this->agreement);
+
+    // Try submitting agreement form.
+    $this->submitAgreementFormWithoutAgreeing($requiredUser->uid);
+    $this->submitAgreementFormWithAgreeing($requiredUser->uid);
+  }
+
+  /**
+   * Asserts that user does not get agreement page without roles.
+   */
+  public function testNoAgreementWithoutRole() {
+    // Creates user, login and assert no agreement page.
+    $this->unprivilegedUserLogin();
+    $this->isNotAgreementPage($this->agreement);
+
+    // Go to front page, no agreement.
+    $this->drupalGet('node');
+    $this->isNotAgreementPage($this->agreement);
+
+    // Go anywhere else, no agreement.
+    $this->drupalGet('user/' . $this->unprivilegedUser->uid);
+    $this->isNotAgreementPage($this->agreement);
+  }
+
+  /**
+   * Creates user with role and login.
+   *
+   * @param int $role_id
+   *   The role ID to apply.
+   * @param string $role_name
+   *   the role name.
+   *
+   * @return object
+   *   The required user account.
+   */
+  protected function requiredUserLogin($role_id, $role_name) {
+    $account = $this->drupalCreateUser();
+    $account->roles[$role_id] = $role_name;
+
+    try {
+      user_save($account);
+    }
+    catch (Exception $e) {
+      $this->fail('Exception thrown: ' . $e->getMessage());
+    }
+
+    $this->drupalLogin($account);
+
+    return $account;
+  }
+
+}

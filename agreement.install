@@ -19,7 +19,7 @@ function _agreement_default_agreement() {
     'path' => variable_get('agreement_page_url', 'agreement'),
     'agreement' => $text['value'],
     'settings' => array(
-      'role' => variable_get('agreement_role', 2),
+      'role' => array(variable_get('agreement_role', 2)),
       'title' => variable_get('agreement_page_title', 'Our Agreement'),
       'format' => $text['format'],
       'frequency' => variable_get('agreement_frequency', 0),
@@ -288,6 +288,27 @@ function agreement_update_7204() {
       $info['settings']['revoked'] = $default_revoke_message;
 
       agreement_type_save($info);
+    }
+    $name_string = implode(' ', $names);
+    return t('Updated agreements: !names', array('!names' => $name_string));
+  }
+
+  return t('No agreement types to update.');
+}
+
+/**
+ * 7025: Updates agreement.settings.role to be an array.
+ */
+function agreement_update_7205() {
+  $agreements = agreement_type_load();
+  if (!empty($agreements)) {
+    $names = array_keys($agreements);
+    foreach ($agreements as $name => $info) {
+      if (!is_array($info['settings']['role'])) {
+        $info['settings']['role'] = array($info['settings']['role']);
+
+        agreement_type_save($info);
+      }
     }
     $name_string = implode(' ', $names);
     return t('Updated agreements: !names', array('!names' => $name_string));
