@@ -22,13 +22,13 @@ function agreement_page($agreement_type) {
 
   // Redirect anonymous users to the home page.
   if (!$user->uid) {
-    drupal_goto('<front>');
+    backdrop_goto('<front>');
   }
 
   $info = agreement_type_load($agreement_type);
   $status = agreement_has_agreed($user, $info);
 
-  $form = drupal_get_form('agreement_form', $status, $info, $user);
+  $form = backdrop_get_form('agreement_form', $status, $info, $user);
   $output = theme('agreement_page', array('form' => $form));
   return $output;
 }
@@ -58,11 +58,11 @@ function agreement_page($agreement_type) {
 function agreement_form($form, &$form_state, $status, $info, $account) {
 
   $form['text'] = array(
-    '#type'       => 'container',
+    '#type' => 'container',
     '#attributes' => array(
       'class' => array('agreement-text'),
     ),
-    'terms'       => array(
+    'terms' => array(
       '#markup' => check_markup($info['agreement'], $info['settings']['format']),
     ),
   );
@@ -78,14 +78,14 @@ function agreement_form($form, &$form_state, $status, $info, $account) {
       !user_access('bypass agreement') &&
       _agreement_user_has_role($account, $info['settings']['role'])) {
     $form['agree'] = array(
-      '#default_value'  => $status,
-      '#title'          => check_plain($info['settings']['checkbox']),
-      '#type'           => 'checkbox',
+      '#default_value' => $status,
+      '#title' => check_plain($info['settings']['checkbox']),
+      '#type' => 'checkbox',
     );
 
     $form['submit'] = array(
-      '#type'           => 'submit',
-      '#value'          => check_plain($info['settings']['submit']),
+      '#type' => 'submit',
+      '#value' => check_plain($info['settings']['submit']),
     );
   }
 
@@ -126,12 +126,12 @@ function agreement_form_submit($form, &$form_state) {
     $mail_key = $agree ? 'notice' : 'revoked';
     $message = $agree ? $info['settings']['success'] : $info['settings']['revoked'];
     agreement_agree($account, $info['name'], $agree);
-    drupal_set_message(check_plain($message));
+    backdrop_set_message(check_plain($message));
 
-    // Send email notifying of acceptance if admin has set an email address.
+    // Send email notifying of acceptance if admin has set an email address.£
     if ($info['settings']['email_recipient'] && (!$had_agreed || !$agree)) {
       $params['account'] = $account;
-      drupal_mail('agreement', $mail_key, $info['settings']['email_recipient'], user_preferred_language($account), $params);
+      backdrop_mail('agreement', $mail_key, $info['settings']['email_recipient'], user_preferred_language($account), $params);
     }
 
     $agreement_success_destination = str_replace(
@@ -157,6 +157,6 @@ function agreement_form_submit($form, &$form_state) {
   }
   catch (\PDOException $e) {
     $transaction->rollback();
-    drupal_set_message(t('An error occurred accepting the agreement.'), 'error');
+    backdrop_set_message(t('An error occurred accepting the agreement.'), 'error');
   }
 }

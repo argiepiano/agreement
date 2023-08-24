@@ -21,16 +21,16 @@ function agreement_views_data() {
   );
 
   $data['agreement']['agreed_date'] = array(
-    'title'   => t('Agreement date'),
-    'help'    => t('The date the agreement was submitted.'),
-    'field'   => array(
+    'title' => t('Agreement date'),
+    'help' => t('The date the agreement was submitted.'),
+    'field' => array(
       'handler' => 'views_handler_field_date',
       'click sortable' => TRUE,
     ),
-    'filter'  => array(
+    'filter' => array(
       'handler' => 'views_handler_filter_date',
     ),
-    'sort'    => array(
+    'sort' => array(
       'handler' => 'views_handler_sort_date',
     ),
   );

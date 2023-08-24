@@ -1,0 +1,21 @@
+{
+    "_config_name": "agreement.settings",
+    "agreement_page_title": "Our Agreement",
+    "agreement_page_url": "agreement",
+    "agreement_text": {
+      "value" : "",
+      "format" : ""
+    },
+    "agreement_role": "2",
+    "agreement_frequency": "0",
+    "agreement_message_success": "Thank you for accepting our agreement.",
+    "agreement_message_failure": "You must accept our agreement to continue.",
+    "agreement_message_revoked": "You successfully revoked your acceptance of our agreement.",
+    "agreement_checkbox_text": "I agree.",
+    "agreement_submit_text": "Submit",
+    "agreement_success_destination": "",
+    "agreement_page_visibility_settings": "0",
+    "agreement_page_visibility_pages": "",
+    "agreement_email_recipient": "",
+    "agreement_reset": "0"
+}

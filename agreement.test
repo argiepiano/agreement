@@ -8,7 +8,7 @@
 /**
  * Agreement base test class.
  */
-class AgreementTestCase extends DrupalWebTestCase {
+class AgreementTestCase extends BackdropWebTestCase {
 
   protected $agreement;
   protected $siteName;
@@ -26,14 +26,17 @@ class AgreementTestCase extends DrupalWebTestCase {
   public function setUp() {
     parent::setUp('agreement');
 
-    $this->siteName = ' | ' . variable_get('siteName', 'Drupal');
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $this->siteName = ' | ' . variable_get('siteName', 'Backdrop');
     $this->pageTitle = $this->randomName(16);
     $this->pageText = $this->randomName(16);
     $this->notSet = $this->randomName(32);
 
     // Make a node with a title that is distinguishable when manually debugging
+
     // tests.
-    $this->node = $this->drupalCreateNode(array(
+
+    $this->node = $this->backdropCreateNode(array(
       'title' => 'Node Page ' . $this->randomName(8),
     ));
     $this->agreement = agreement_type_load('default');
@@ -55,31 +58,35 @@ class AgreementTestCase extends DrupalWebTestCase {
    */
   protected function privilegedUserLogin() {
     // Create and log in our privileged user.
-    $this->privilegedUser = $this->drupalCreateUser(array(
-      'administer agreements', 'access administration pages',
-      'administer site configuration', 'bypass node access',
+
+    $this->privilegedUser = $this->backdropCreateUser(array(
+      'administer agreements',
+      'access administration pages',
+      'administer site configuration',
+      'bypass node access',
     ));
-    $this->drupalLogin($this->privilegedUser);
+    $this->backdropLogin($this->privilegedUser);
   }
 
   /**
    * Creates an user with the "bypass agreement" permission and login.
    */
   protected function bypassUserLogin() {
-    $this->bypassUser = $this->drupalCreateUser(array('bypass agreement'));
-    $this->drupalLogin($this->bypassUser);
+    $this->bypassUser = $this->backdropCreateUser(array('bypass agreement'));
+    $this->backdropLogin($this->bypassUser);
   }
 
   /**
    * Creates an unprivileged user and login as that user.
    *
    * @param string $destination
-   *   The destination parameter for ::drupalLogin().
+   *   The destination parameter for ::backdropLogin().
    */
   protected function unprivilegedUserLogin($destination = 'user') {
     // Create and log in our unprivileged user.
-    $this->unprivilegedUser = $this->drupalCreateUser(array('access content'));
-    $this->drupalLogin($this->unprivilegedUser, $destination);
+
+    $this->unprivilegedUser = $this->backdropCreateUser(array('access content'));
+    $this->backdropLogin($this->unprivilegedUser, $destination);
   }
 
   /**
@@ -89,10 +96,10 @@ class AgreementTestCase extends DrupalWebTestCase {
    *   The form values to save keyed by the form element name.
    */
   protected function configureAgreementSettings($settings) {
-    $this->drupalGet('admin/config/people/agreement');
+    $this->backdropGet('admin/config/people/agreement');
     $this->assertResponse(200, t('User is allowed to access agreement settings page.'));
 
-    $this->drupalPost('admin/config/people/agreement/manage/default', $settings, t('Save configuration'));
+    $this->backdropPost('admin/config/people/agreement/manage/default', $settings, t('Save configuration'));
     $this->assertText('Agreement type ' . $this->agreement['type'] . ' saved successfully.', t('Agreement settings saved'));
   }
 
@@ -153,8 +160,9 @@ class AgreementTestCase extends DrupalWebTestCase {
    */
   protected function submitAgreementFormWithoutAgreeing($uid) {
     // Try to submit without checking the I agree box.
+
     $field_values = array();
-    $this->drupalPost('agreement', $field_values, $this->agreement['settings']['submit']);
+    $this->backdropPost('agreement', $field_values, $this->agreement['settings']['submit']);
     $this->assertText($this->agreement['settings']['failure'], t('Correct error message'));
   }
 
@@ -166,8 +174,9 @@ class AgreementTestCase extends DrupalWebTestCase {
    */
   protected function submitAgreementFormWithAgreeing($uid) {
     // Submit with checking the I agree box.
+
     $field_values['agree'] = '1';
-    $this->drupalPost('agreement', $field_values, $this->agreement['settings']['submit']);
+    $this->backdropPost('agreement', $field_values, $this->agreement['settings']['submit']);
     $this->assertText($this->agreement['settings']['success'], t('Correct success message'));
     $this->isNotAgreementPage($this->agreement);
   }
@@ -175,19 +184,21 @@ class AgreementTestCase extends DrupalWebTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function drupalLogin(stdClass $user, $destination = 'user') {
+  protected function backdropLogin(stdClass $user, $destination = 'user') {
     if ($this->loggedInUser) {
-      $this->drupalLogout();
+      $this->backdropLogout();
     }
 
     $edit = array(
       'name' => $user->name,
       'pass' => $user->pass_raw,
     );
-    $this->drupalPost($destination, $edit, t('Log in'));
+    $this->backdropPost($destination, $edit, t('Log in'));
 
     // If a "log out" link appears on the page, it is almost certainly because
+
     // the login was successful.
+
     $pass = $this->assertLink(t('Log out'), 0, t('User %name successfully logged in.', array('%name' => $user->name)), t('User login'));
 
     if ($pass) {
@@ -219,26 +230,31 @@ class AgreementDefaultsPrivilegedUserTestCase extends AgreementTestCase {
   public function testAgreement() {
 
     // After save, re-open agreement settings.
+
     $this->assertUrl('admin/config/people/agreement/manage/default', array(), t('URL of settings page is correct: !url', array('!url' => $this->getUrl())));
     $this->assertTitle('Manage Agreement: Default agreement' . $this->siteName);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // Go anywhere else, open agreement.
-    $this->drupalGet('admin');
+
+    $this->backdropGet('admin');
     $this->isAgreementPage($this->agreement);
 
     // Try to go somewhere without submitting.
-    $this->drupalGet('node/add');
+
+    $this->backdropGet('node/add');
     $this->isAgreementPage($this->agreement);
 
     // Try submitting agreement form.
+
     $this->submitAgreementFormWithoutAgreeing($this->privilegedUser->uid);
     $this->submitAgreementFormWithAgreeing($this->privilegedUser->uid);
 
-    $this->drupalGet('admin');
+    $this->backdropGet('admin');
     $this->isNotAgreementPage($this->agreement);
   }
 
@@ -268,21 +284,25 @@ class AgreementDefaultsUnprivilegedUserTestCase extends AgreementTestCase {
     $this->unprivilegedUserLogin();
 
     // Sent to agreement page.
+
     $this->isAgreementPage($this->agreement);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // Go anywhere else, open agreement.
-    $this->drupalGet('user/' . $this->unprivilegedUser->uid);
+
+    $this->backdropGet('user/' . $this->unprivilegedUser->uid);
     $this->isAgreementPage($this->agreement);
 
     // Try submitting agreement form.
+
     $this->submitAgreementFormWithoutAgreeing($this->unprivilegedUser->uid);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
 
-    $this->drupalGet('admin/config/people/agreement');
+    $this->backdropGet('admin/config/people/agreement');
     $this->assertResponse(403, t('User is not allowed to access agreement settings page.'));
   }
 
@@ -315,14 +335,17 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
     $this->unprivilegedUserLogin();
 
     // Not sent to agreement page.
+
     $this->isNotAgreementPage($this->agreement);
 
     // Go to front page, open agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isAgreementPage($this->agreement);
 
     // Go anywhere else, no agreement.
-    $this->drupalGet('user/' . $this->unprivilegedUser->uid);
+
+    $this->backdropGet('user/' . $this->unprivilegedUser->uid);
     $this->isNotAgreementPage($this->agreement);
   }
 
@@ -331,6 +354,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
    */
   public function testAgreementFrequency() {
     // A) Agreement required once.
+
     $this->agreement['settings']['visibility_settings'] = 1;
     $this->agreement['settings']['visibility_pages'] = '<front>';
     agreement_type_save($this->agreement);
@@ -339,33 +363,39 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
     $this->unprivilegedUserLogin();
 
     // Go to front page, open agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
 
     // Log out, log back in, no agreement.
-    $this->drupalLogin($this->unprivilegedUser);
-    $this->drupalGet('node');
+
+    $this->backdropLogin($this->unprivilegedUser);
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // B) Agreement required on every login.
+
     $this->agreement['settings']['frequency'] = 0;
     agreement_type_save($this->agreement);
     $this->agreement = agreement_type_load($this->agreement['name'], FALSE);
 
-    $this->drupalLogin($this->unprivilegedUser);
+    $this->backdropLogin($this->unprivilegedUser);
 
     // Go to front page, open agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
 
     // Log out, log back in, open agreement.
-    $this->drupalLogin($this->unprivilegedUser);
-    $this->drupalGet('node');
+
+    $this->backdropLogin($this->unprivilegedUser);
+    $this->backdropGet('node');
     $this->isAgreementPage($this->agreement);
 
     // Change password, no agreement.
+
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
     $this->agreement['settings']['visibility_pages'] = '';
     agreement_type_save($this->agreement);
@@ -375,7 +405,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
       'pass[pass1]' => $pass = $this->randomString(),
       'pass[pass2]' => $pass,
     );
-    $this->drupalPost('user/' . $this->unprivilegedUser->uid . '/edit', $edit, t('Save'));
+    $this->backdropPost('user/' . $this->unprivilegedUser->uid . '/edit', $edit, t('Save'));
     $this->isNotAgreementPage($this->agreement);
     $this->assertText(t('The changes have been saved.'), t('Password was changed'));
   }
@@ -395,6 +425,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
   public function testAgreementDestination() {
 
     // A) Agreement destination = blank.
+
     $this->agreement['settings']['destination'] = '';
     $this->agreement['settings']['visibility_settings'] = 0;
     $this->agreement['settings']['visibility_pages'] = '';
@@ -402,47 +433,57 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
     $this->agreement = agreement_type_load($this->agreement['name'], FALSE);
 
     // Log in, open agreement, go to front page.
+
     $this->unprivilegedUserLogin('/node');
     $this->isAgreementPage($this->agreement);
-    $this->drupalGet('node/' . $this->node->nid);
+    $this->backdropGet('node/' . $this->node->nid);
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
     $this->isFrontPage();
 
     // Log in, go somewhere other than front page, open agreement, go to user's
+
     // original destination.
+
     $this->unprivilegedUserLogin('/node/' . $this->node->nid);
     $this->isAgreementPage($this->agreement);
-    $this->drupalGet('/node');
+    $this->backdropGet('/node');
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
     $this->assertUrl('node/' . $this->node->nid, array(), t('User is redirected to original destination: !url', array('!url' => $this->getUrl())));
 
     // @todo: Log in following password reset link, go somewhere other than
+
     // front page, open agreement, go to user profile.
+
     // B) Agreement destination = node/1.
+
     $this->agreement['settings']['destination'] = 'node/1';
     agreement_type_save($this->agreement);
     $this->agreement = agreement_type_load($this->agreement['name']);
 
     // Log in, open agreement, go to node/1.
+
     $this->unprivilegedUserLogin('/node');
     $this->isAgreementPage($this->agreement);
-    $this->drupalGet('user/' . $this->unprivilegedUser->uid . '/edit');
+    $this->backdropGet('user/' . $this->unprivilegedUser->uid . '/edit');
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
     $this->assertUrl('node/1', array(), t('User is redirected to node 1: !url', array('!url' => $this->getUrl())));
 
     // Log in, go somewhere other than front page, open agreement, go to node/1.
+
     $this->unprivilegedUserLogin('user');
     $this->isAgreementPage($this->agreement);
-    $this->drupalGet('user/' . $this->unprivilegedUser->uid . '/edit');
+    $this->backdropGet('user/' . $this->unprivilegedUser->uid . '/edit');
     $this->isAgreementPage($this->agreement);
     $this->submitAgreementFormWithAgreeing($this->unprivilegedUser->uid);
     $this->assertUrl('node/1', array(), t('User is redirected to node 1: !url', array('!url' => $this->getUrl())));
 
     // @todo: Log in following password reset link, go somewhere other than
+
     // front page, open agreement, go to user profile.
+
   }
 
 }
@@ -468,10 +509,12 @@ class AgreementBypassUserTestCase extends AgreementTestCase {
    */
   public function testAgreement() {
     // Sent to agreement page.
+
     $this->unprivilegedUserLogin();
     $this->isAgreementPage($this->agreement);
 
     // Not sent to agreement page.
+
     $this->bypassUserLogin();
     $this->assertUrl('user/' . $this->bypassUser->uid);
   }
@@ -510,48 +553,57 @@ class AgreementMultipleTestCase extends AgreementTestCase {
       'settings[visibility_settings]' => 1,
       'settings[visibility_pages]' => 'node/' . $this->node->nid,
     );
-    $this->drupalPost('admin/config/people/agreement/add', $settings, t('Save configuration'));
+    $this->backdropPost('admin/config/people/agreement/add', $settings, t('Save configuration'));
     $this->assertText('Agreement type ' . $settings['type'] . ' saved successfully.', t('Second agreement created successfully.'));
 
     // The static cache needs to be reset here as this is a different request.
+
     $new_agreement = agreement_type_load($settings['name'], FALSE);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
     $this->isNotAgreementpage($new_agreement);
 
     // Go anywhere else, open agreement.
-    $this->drupalGet('admin');
+
+    $this->backdropGet('admin');
     $this->isAgreementPage($this->agreement);
     $this->isNotAgreementPage($new_agreement);
 
     // Agreement with visibility settings for all pages displays instead of
+
     // agreement with explicity visibility page settings.
-    $this->drupalGet('node/' . $this->node->nid);
+
+    $this->backdropGet('node/' . $this->node->nid);
     $this->isAgreementPage($this->agreement);
     $this->isNotAgreementPage($new_agreement);
 
     // Accept the agreement.
+
     $edit = array(
       'agree' => 1,
     );
-    $this->drupalPost(NULL, $edit, t('Submit'));
+    $this->backdropPost(NULL, $edit, t('Submit'));
     $this->isNotAgreementPage($this->agreement);
 
     // Go to the node again, which is second agreement page.
-    $this->drupalGet('node/' . $this->node->nid);
+
+    $this->backdropGet('node/' . $this->node->nid);
     $this->isAgreementPage($new_agreement);
     $this->isNotAgreementPage($this->agreement);
 
     // Accept the second agreement.
-    $this->drupalPost(NULL, $edit, $new_agreement['settings']['submit']);
+
+    $this->backdropPost(NULL, $edit, $new_agreement['settings']['submit']);
     $this->isNotAgreementPage($new_agreement);
     $this->isNotAgreementPage($this->agreement);
 
     // Remove the second agreement.
-    $this->drupalLogin($this->privilegedUser);
-    $this->drupalPost('admin/config/people/agreement/manage/' . $settings['name'] . '/delete', array(), t('Confirm'));
+
+    $this->backdropLogin($this->privilegedUser);
+    $this->backdropPost('admin/config/people/agreement/manage/' . $settings['name'] . '/delete', array(), t('Confirm'));
     $agreement_type_delete_success = 'Successfully deleted agreement type, ' . $settings['type'];
     $this->assertText($agreement_type_delete_success, 'Found agreement type deleted message.');
   }
@@ -583,16 +635,20 @@ class AgreementRevokeTestCase extends AgreementTestCase {
     $this->revokeUserLogin();
 
     // Try submitting agreement form.
+
     $this->submitAgreementFormWithAgreeing($this->revokeUser->uid);
 
     // Revokes the agreement.
+
     $this->submitAgreementFormWithRevoking();
 
     // Assert agreement page after revoking.
-    $this->drupalGet('node/' . $this->node->nid);
+
+    $this->backdropGet('node/' . $this->node->nid);
     $this->isAgreementPage($this->agreement);
 
     // Assert that the user can re-accept the agreement.
+
     $this->submitAgreementFormWithAgreeing($this->revokeUser->uid);
   }
 
@@ -601,8 +657,9 @@ class AgreementRevokeTestCase extends AgreementTestCase {
    */
   protected function submitAgreementFormWithRevoking() {
     // Submit with checking the I agree box.
+
     $field_values['agree'] = FALSE;
-    $this->drupalPost('agreement', $field_values, $this->agreement['settings']['submit']);
+    $this->backdropPost('agreement', $field_values, $this->agreement['settings']['submit']);
     $this->assertText($this->agreement['settings']['revoked'], t('Correct success message'));
   }
 
@@ -613,8 +670,8 @@ class AgreementRevokeTestCase extends AgreementTestCase {
    *   An optional destination to go to on login.
    */
   protected function revokeUserLogin($destination = 'user') {
-    $this->revokeUser = $this->drupalCreateUser(array('access content', 'revoke own agreement'));
-    $this->drupalLogin($this->revokeUser, $destination);
+    $this->revokeUser = $this->backdropCreateUser(array('access content', 'revoke own agreement'));
+    $this->backdropLogin($this->revokeUser, $destination);
   }
 
 }
@@ -656,11 +713,13 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
     parent::setUp();
 
     // Create the roles.
-    $this->requiredRole = $this->drupalCreateRole(['access content'], 'first role');
-    $this->requiredSecondRole = $this->drupalCreateRole(['access content', 'create page content'], 'second role');
+
+    $this->requiredRole = $this->backdropCreateRole(['access content'], 'first role');
+    $this->requiredSecondRole = $this->backdropCreateRole(['access content', 'create page content'], 'second role');
 
     // Set the agreement to use the roles from the two required users.
-    $this->drupalLogin($this->privilegedUser);
+
+    $this->backdropLogin($this->privilegedUser);
     $role_ids = array($this->requiredRole, $this->requiredSecondRole);
     $settings = array(
       'settings[role][]' => $role_ids,
@@ -668,7 +727,7 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
     $this->configureAgreementSettings($settings);
     $this->agreement = agreement_type_load('default', FALSE);
     $this->assertEqual($this->agreement['settings']['role'], $role_ids, 'Agreement roles saved successfully.');
-    $this->drupalLogout();
+    $this->backdropLogout();
   }
 
   /**
@@ -676,18 +735,22 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
    */
   public function testAgreementForFirstRole() {
     // Creates user, login and assert agreement page.
+
     $requiredUser = $this->requiredUserLogin($this->requiredRole, 'first role');
     $this->isAgreementPage($this->agreement);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // Go anywhere else, open agreement.
-    $this->drupalGet('user/' . $requiredUser->uid);
+
+    $this->backdropGet('user/' . $requiredUser->uid);
     $this->isAgreementPage($this->agreement);
 
     // Try submitting agreement form.
+
     $this->submitAgreementFormWithoutAgreeing($requiredUser->uid);
     $this->submitAgreementFormWithAgreeing($requiredUser->uid);
   }
@@ -697,18 +760,22 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
    */
   public function testAgreementForSecondRole() {
     // Creates user, login and assert agreement page.
+
     $requiredUser = $this->requiredUserLogin($this->requiredSecondRole, 'second role');
     $this->isAgreementPage($this->agreement);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // Go anywhere else, open agreement.
-    $this->drupalGet('user/' . $requiredUser->uid);
+
+    $this->backdropGet('user/' . $requiredUser->uid);
     $this->isAgreementPage($this->agreement);
 
     // Try submitting agreement form.
+
     $this->submitAgreementFormWithoutAgreeing($requiredUser->uid);
     $this->submitAgreementFormWithAgreeing($requiredUser->uid);
   }
@@ -718,15 +785,18 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
    */
   public function testNoAgreementWithoutRole() {
     // Creates user, login and assert no agreement page.
+
     $this->unprivilegedUserLogin();
     $this->isNotAgreementPage($this->agreement);
 
     // Go to front page, no agreement.
-    $this->drupalGet('node');
+
+    $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
     // Go anywhere else, no agreement.
-    $this->drupalGet('user/' . $this->unprivilegedUser->uid);
+
+    $this->backdropGet('user/' . $this->unprivilegedUser->uid);
     $this->isNotAgreementPage($this->agreement);
   }
 
@@ -742,7 +812,7 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
    *   The required user account.
    */
   protected function requiredUserLogin($role_id, $role_name) {
-    $account = $this->drupalCreateUser();
+    $account = $this->backdropCreateUser();
     $account->roles[$role_id] = $role_name;
 
     try {
@@ -752,7 +822,7 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
       $this->fail('Exception thrown: ' . $e->getMessage());
     }
 
-    $this->drupalLogin($account);
+    $this->backdropLogin($account);
 
     return $account;
   }

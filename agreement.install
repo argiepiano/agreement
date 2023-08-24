@@ -12,27 +12,28 @@
  *   Agreement type.
  */
 function _agreement_default_agreement() {
-  $text = variable_get('agreement_text', array('value' => '', 'format' => filter_default_format()));
+  $config = config('agreement.settings');
+  $text = $config->get('agreement_text');
   $default = array(
     'name' => 'default',
     'type' => 'Default agreement',
-    'path' => variable_get('agreement_page_url', 'agreement'),
+    'path' => $config->get('agreement_page_url'),
     'agreement' => $text['value'],
     'settings' => array(
-      'role' => array(variable_get('agreement_role', 2)),
-      'title' => variable_get('agreement_page_title', 'Our Agreement'),
+      'role' => array($config->get('agreement_role')),
+      'title' => $config->get('agreement_page_title'),
       'format' => $text['format'],
-      'frequency' => variable_get('agreement_frequency', 0),
-      'success' => variable_get('agreement_message_success', 'Thank you for accepting our agreement.'),
-      'failure' => variable_get('agreement_message_failure', 'You must accept our agreement to continue.'),
-      'revoked' => variable_get('agreement_message_revoked', 'You successfully revoked your acceptance of our agreement.'),
-      'checkbox' => variable_get('agreement_checkbox_text', 'I agree.'),
-      'submit' => variable_get('agreement_submit_text', 'Submit'),
-      'destination' => variable_get('agreement_success_destination', ''),
-      'visibility_settings' => variable_get('agreement_page_visibility_settings', 0),
-      'visibility_pages' => variable_get('agreement_page_visibility_pages', ''),
-      'email_recipient' => variable_get('agreement_email_recipient', ''),
-      'reset_date' => variable_get('agreement_reset', 0),
+      'frequency' => $config->get('agreement_frequency'),
+      'success' => $config->get('agreement_message_success'),
+      'failure' => $config->get('agreement_message_failure'),
+      'revoked' => $config->get('agreement_message_revoked'),
+      'checkbox' => $config->get('agreement_checkbox_text'),
+      'submit' => $config->get('agreement_submit_text'),
+      'destination' => $config->get('agreement_success_destination'),
+      'visibility_settings' => $config->get('agreement_page_visibility_settings'),
+      'visibility_pages' => $config->get('agreement_page_visibility_pages'),
+      'email_recipient' => $config->get('agreement_email_recipient'),
+      'reset_date' => $config->get('agreement_reset'),
     ),
   );
   return $default;
@@ -46,13 +47,13 @@ function agreement_install() {
   $n = db_update('system')->condition('name', 'agreement', '=')->fields(array('weight' => 9999))->execute();
 
   if ($n <> 1) {
-    drupal_set_message(st('Could not set agreement module weight.'), 'error');
+    backdrop_set_message(st('Could not set agreement module weight.'), 'error');
   }
 
   // Add a default agreement.
   $default = (object) _agreement_default_agreement();
   $default->settings = serialize($default->settings);
-  drupal_write_record('agreement_type', $default);
+  backdrop_write_record('agreement_type', $default);
 }
 
 /**
@@ -142,177 +143,47 @@ function agreement_schema() {
 }
 
 /**
- * Implements hook_uninstall().
+ * Implements hook_update_last_removed().
  */
-function agreement_uninstall() {
-  variable_del('agreement_role');
-  variable_del('agreement_frequency');
-  variable_del('agreement_text');
-  variable_del('agreement_page_title');
-  variable_del('agreement_page_url');
-  variable_del('agreement_message_success');
-  variable_del('agreement_message_failure');
-  variable_del('agreement_message_revoked');
-  variable_del('agreement_checkbox_text');
-  variable_del('agreement_submit_text');
-  variable_del('agreement_success_destination');
-  variable_del('agreement_page_visibility_settings');
-  variable_del('agreement_page_visibility_pages');
-  variable_del('agreement_email_recipient');
+function agreement_update_last_removed() {
+  return 7205;
 }
 
 /**
- * Migrate from 'skip agreement' to 'bypass agreement' permission.
+ * Migrate agreement variables to config.
  */
-function agreement_update_7200() {
+function agreement_update_1000() {
+  $config = config('agreement.settings');
+  $config->set('agreement_page_title', update_variable_get('agreement_page_title', 'Our Agreement'));
+  $config->set('agreement_page_url', update_variable_get('agreement_page_url', 'agreement'));
+  $config->set('agreement_text', update_variable_get('agreement_text', 'dynamic value in file /agreement/agreement.install line 15'));
+  $config->set('agreement_role', update_variable_get('agreement_role', '2'));
+  $config->set('agreement_frequency', update_variable_get('agreement_frequency', '0'));
+  $config->set('agreement_message_success', update_variable_get('agreement_message_success', 'Thank you for accepting our agreement.'));
+  $config->set('agreement_message_failure', update_variable_get('agreement_message_failure', 'You must accept our agreement to continue.'));
+  $config->set('agreement_message_revoked', update_variable_get('agreement_message_revoked', 'You successfully revoked your acceptance of our agreement.'));
+  $config->set('agreement_checkbox_text', update_variable_get('agreement_checkbox_text', 'I agree.'));
+  $config->set('agreement_submit_text', update_variable_get('agreement_submit_text', 'Submit'));
+  $config->set('agreement_success_destination', update_variable_get('agreement_success_destination', ''));
+  $config->set('agreement_page_visibility_settings', update_variable_get('agreement_page_visibility_settings', '0'));
+  $config->set('agreement_page_visibility_pages', update_variable_get('agreement_page_visibility_pages', ''));
+  $config->set('agreement_email_recipient', update_variable_get('agreement_email_recipient', ''));
+  $config->set('agreement_reset', update_variable_get('agreement_reset', '0'));
+  $config->save();
 
-  // Find any permissions that a user may have configured without running the
-  // update.
-  $rids = array();
-
-  $query = db_select('role_permission', 'rp');
-  $res = $query
-    ->condition('module', 'agreement')
-    ->condition('permission', 'bypass agreement')
-    ->fields('rp', array('rid'))
-    ->execute();
-  foreach ($res as $rec) {
-    $rids[] = $rec->rid;
-  }
-
-  // Update any role permission from skip agreement to bypass agreement.
-  $query = db_update('role_permission');
-  $query
-    ->condition('module', 'agreement')
-    ->condition('permission', 'skip agreement')
-    ->fields(array('permission' => 'bypass agreement'));
-
-  if (!empty($rids)) {
-    // Do not update already configured role permissions.
-    $query->condition('rid', $rids, 'NOT IN');
-  }
-
-  $updated_num = $query->execute();
-  $deleted_num = 0;
-
-  if (!empty($rids)) {
-    // Remove old role permissions if already configured role permissions exist.
-    $query = db_delete('role_permission');
-    $deleted_num = $query
-      ->condition('rid', $rids, 'IN')
-      ->condition('permission', 'skip agreement')
-      ->condition('module', 'agreement')
-      ->execute();
-  }
-
-  $items = array();
-  $items[] = format_plural($updated_num, 'Updated 1 permission', 'Updated @count permissions');
-  $items[] = format_plural(count($rids), 'Ignored 1 existing permission', 'Ignored @count existing permissions');
-  $items[] = format_plural($deleted_num, 'Deleted 1 old permission', 'Deleted @count old permissions');
-
-  return theme('item_list', array('items' => $items));
-}
-
-/**
- * 7201: Add a type column to {agreement} table.
- */
-function agreement_update_7201() {
-  if (!db_field_exists('agreement', 'type')) {
-    db_add_field('agreement', 'type', array(
-      'type' => 'varchar',
-      'length' => 100,
-      'not null' => TRUE,
-      'default' => 'default',
-    ));
-  }
-
-  if (!db_index_exists('agreement', 'type_uid')) {
-    db_add_index('agreement', 'type_uid', array('type', 'uid'));
-  }
-
-  if (!db_table_exists('agreement_type')) {
-    $schema = agreement_schema();
-    db_create_table('agreement_type', $schema['agreement_type']);
-  }
-
-  return t('Updated agreement schema and added agreement_type table.');
-}
-
-/**
- * 7202: Add a default agreement.
- */
-function agreement_update_7202() {
-  $default = (object) _agreement_default_agreement();
-  $default->settings = serialize($default->settings);
-  $types = agreement_type_load();
-
-  if (empty($types)) {
-    drupal_write_record('agreement_type', $default);
-  }
-
-  return t('Added default agreement type.');
-}
-
-/**
- * 7203: Update the stored agreement frequency.
- */
-function agreement_update_7203() {
-  $agreements = agreement_type_load();
-
-  if (!empty($agreements)) {
-    $names = array_keys($agreements);
-    foreach ($agreements as $name => $info) {
-      $frequency = $info['settings']['frequency'];
-      $info['settings']['reset_date'] = $name === 'default' ? variable_get('agreement_reset', 0) : 0;
-      $info['settings']['frequency'] = $frequency == 0 ? -1 : 0;
-
-      agreement_type_save($info);
-    }
-    $name_string = implode(' ', $names);
-    return t('Updated frequency and added reset_date to the following agreements: !names', array('!names' => $name_string));
-  }
-
-  return t('No agreement types to update.');
-}
-
-/**
- * 7204: Update agreements with default values for revoke agreement.
- */
-function agreement_update_7204() {
-  $default_revoke_message = agreement_get_translated_message('AGREEMENT_MESSAGE_REVOKED');
-  $agreements = agreement_type_load();
-
-  if (!empty($agreements)) {
-    $names = array_keys($agreements);
-    foreach ($agreements as $name => $info) {
-      $info['settings']['revoked'] = $default_revoke_message;
-
-      agreement_type_save($info);
-    }
-    $name_string = implode(' ', $names);
-    return t('Updated agreements: !names', array('!names' => $name_string));
-  }
-
-  return t('No agreement types to update.');
-}
-
-/**
- * 7025: Updates agreement.settings.role to be an array.
- */
-function agreement_update_7205() {
-  $agreements = agreement_type_load();
-  if (!empty($agreements)) {
-    $names = array_keys($agreements);
-    foreach ($agreements as $name => $info) {
-      if (!is_array($info['settings']['role'])) {
-        $info['settings']['role'] = array($info['settings']['role']);
-
-        agreement_type_save($info);
-      }
-    }
-    $name_string = implode(' ', $names);
-    return t('Updated agreements: !names', array('!names' => $name_string));
-  }
-
-  return t('No agreement types to update.');
+  update_variable_del('agreement_page_title');
+  update_variable_del('agreement_page_url');
+  update_variable_del('agreement_text');
+  update_variable_del('agreement_role');
+  update_variable_del('agreement_frequency');
+  update_variable_del('agreement_message_success');
+  update_variable_del('agreement_message_failure');
+  update_variable_del('agreement_message_revoked');
+  update_variable_del('agreement_checkbox_text');
+  update_variable_del('agreement_submit_text');
+  update_variable_del('agreement_success_destination');
+  update_variable_del('agreement_page_visibility_settings');
+  update_variable_del('agreement_page_visibility_pages');
+  update_variable_del('agreement_email_recipient');
+  update_variable_del('agreement_reset');
 }

@@ -35,7 +35,7 @@ function agreement_init() {
   // Users with the bypass agreement permission are always excluded from any
   // agreement.
   if (!user_access('bypass agreement')) {
-    $path = strtolower(drupal_get_path_alias(current_path()));
+    $path = strtolower(backdrop_get_path_alias(current_path()));
     $info = agreement_type_get_best_match($user, $path);
     if ($info) {
       // Save intended destination.
@@ -48,7 +48,7 @@ function agreement_init() {
         }
       }
 
-      drupal_goto(check_plain($info['path']));
+      backdrop_goto(check_plain($info['path']));
       exit;
     }
   }
@@ -61,65 +61,65 @@ function agreement_menu() {
   $items = array();
 
   $items['admin/config/people/agreement'] = array(
-    'access arguments'  => array('administer agreements'),
-    'description'       => 'Configure settings for the Agreement module.',
-    'file'              => 'agreement.admin.inc',
-    'page callback'     => 'agreement_type_overview',
-    'page arguments'    => array(),
-    'title'             => 'Agreement settings',
-    'type'              => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer agreements'),
+    'description' => 'Configure settings for the Agreement module.',
+    'file' => 'agreement.admin.inc',
+    'page callback' => 'agreement_type_overview',
+    'page arguments' => array(),
+    'title' => 'Agreement settings',
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/config/people/agreement/manage'] = array(
-    'access arguments'  => array('administer agreements'),
-    'title'             => 'Manage',
-    'type'              => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('administer agreements'),
+    'title' => 'Manage',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   $items['admin/config/people/agreement/manage/%agreement_type'] = array(
-    'access arguments'  => array('administer agreements'),
-    'file'              => 'agreement.admin.inc',
-    'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('agreement_settings_form', 5),
-    'title'             => 'Manage Agreement: %agreement_type',
-    'title arguments'   => array(5),
-    'title callback'    => 'agreement_type_edit_title',
-    'type'              => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer agreements'),
+    'file' => 'agreement.admin.inc',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('agreement_settings_form', 5),
+    'title' => 'Manage Agreement: %agreement_type',
+    'title arguments' => array(5),
+    'title callback' => 'agreement_type_edit_title',
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/config/people/agreement/manage/%agreement_type/edit'] = array(
-    'access arguments'  => array('administer agreements'),
-    'title'             => 'Modify',
-    'type'              => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('administer agreements'),
+    'title' => 'Modify',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   $items['admin/config/people/agreement/add'] = array(
-    'access arguments'  => array('administer agreements'),
-    'file'              => 'agreement.admin.inc',
-    'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('agreement_settings_form', NULL),
-    'title'             => 'Add agreement',
-    'type'              => MENU_LOCAL_ACTION,
+    'access arguments' => array('administer agreements'),
+    'file' => 'agreement.admin.inc',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('agreement_settings_form', NULL),
+    'title' => 'Add agreement',
+    'type' => MENU_LOCAL_ACTION,
   );
 
   $items['admin/config/people/agreement/manage/%agreement_type/reset'] = array(
-    'access arguments'  => array('administer agreements'),
-    'file'              => 'agreement.admin.inc',
-    'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('agreement_type_reset_form', 5),
-    'title'             => 'Reset',
-    'type'              => MENU_LOCAL_TASK,
-    'weight'            => 1,
+    'access arguments' => array('administer agreements'),
+    'file' => 'agreement.admin.inc',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('agreement_type_reset_form', 5),
+    'title' => 'Reset',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
   );
 
   $items['admin/config/people/agreement/manage/%agreement_type/delete'] = array(
-    'access arguments'  => array('administer agreements'),
-    'file'              => 'agreement.admin.inc',
-    'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('agreement_type_delete_form', 5),
-    'title'             => 'Remove',
-    'type'              => MENU_LOCAL_TASK,
-    'weight'            => 2,
+    'access arguments' => array('administer agreements'),
+    'file' => 'agreement.admin.inc',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('agreement_type_delete_form', 5),
+    'title' => 'Remove',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
   );
 
   $types = agreement_type_load(NULL, FALSE);
@@ -129,12 +129,12 @@ function agreement_menu() {
     if (!isset($items[$page])) {
       $items[$page] = array(
         'access arguments' => array('access content'),
-        'description'      => 'The ' . $type['type'] . ' agreement page.',
-        'file'             => 'agreement.pages.inc',
-        'page callback'    => 'agreement_page',
-        'page arguments'   => array($name),
-        'title'            => $type['settings']['title'],
-        'type'             => MENU_CALLBACK,
+        'description' => 'The ' . $type['type'] . ' agreement page.',
+        'file' => 'agreement.pages.inc',
+        'page callback' => 'agreement_page',
+        'page arguments' => array($name),
+        'title' => $type['settings']['title'],
+        'type' => MENU_CALLBACK,
       );
     }
   }
@@ -145,7 +145,7 @@ function agreement_menu() {
 /**
  * Implements hook_user_update().
  */
-function agreement_user_update(&$edit, &$account, $category = NULL) {
+function agreement_user_update($account) {
   global $user;
   $types = agreement_type_load();
 
@@ -153,7 +153,7 @@ function agreement_user_update(&$edit, &$account, $category = NULL) {
     // Do not require user to re-accept agreement if they've just changed their
     // password.
     if ($info['settings']['frequency'] === 0 &&
-        !empty($edit['pass']) &&
+        $account->pass !== $account->original->pass && // TEST THIS!
         $account->uid === $user->uid) {
       agreement_agree($account, $name, 2);
     }
@@ -174,12 +174,13 @@ function agreement_theme($existing, $type, $theme, $path) {
 /**
  * Implements hook_mail().
  */
-function agreement_mail($key, &$message, $params) {
+function agreement_mail($key, $message, $params) {
+  $config = config('agreement.settings');
   switch ($key) {
     case 'notice':
       $variables = array(
-        '!site-name' => variable_get('site_name', 'Drupal'),
-        '!username' => format_username($params['account']),
+        '!site-name' => config_get('system.core', 'site_name'),
+        '!username' => user_format_name($params['account']),
       );
       $message['subject'] = t('!site-name: !username accepted agreement', $variables, array('langcode' => $message['language']->language));
       $message['body'][] = t('The user has accepted the agreement.');
@@ -187,8 +188,8 @@ function agreement_mail($key, &$message, $params) {
 
     case 'revoked':
       $variables = array(
-        '!site-name' => variable_get('site_name', 'Drupal'),
-        '!username' => format_username($params['account']),
+        '!site-name' => config_get('system.core', 'site_name'),
+        '!username' => user_format_name($params['account']),
       );
       $message['subject'] = t('!site-name: !username revoked acceptance of agreement', $variables, array('langcode' => $message['language']->language));
       $message['body'][] = t('The user has revoked their acceptance of the agreement.');
@@ -197,21 +198,11 @@ function agreement_mail($key, &$message, $params) {
 }
 
 /**
- * Implements hook_views_api().
- */
-function agreement_views_api() {
-  return array(
-    'api' => 3,
-    'path' => drupal_get_path('module', 'agreement'),
-  );
-}
-
-/**
  * Format the agreement page.
  *
  * @ingroup themeable
  */
-function theme_agreement_page(&$variables) {
+function theme_agreement_page($variables) {
   return $variables['form'];
 }
 
@@ -228,7 +219,7 @@ function theme_agreement_page(&$variables) {
  *   a single agreement type.
  */
 function agreement_type_load($name = NULL, $use_cache = TRUE) {
-  $agreement_types = &drupal_static(__FUNCTION__);
+  $agreement_types = backdrop_static(__FUNCTION__);
 
   if (!$use_cache || !isset($agreement_types) || !is_array($agreement_types)) {
     $types = array();
@@ -274,17 +265,17 @@ function agreement_type_save($info, $rebuild_menu = FALSE) {
   $new->settings = serialize($new->settings);
 
   if (isset($new->id)) {
-    drupal_write_record('agreement_type', $new, array('id'));
+    backdrop_write_record('agreement_type', $new, array('id'));
   }
   else {
-    drupal_write_record('agreement_type', $new);
+    backdrop_write_record('agreement_type', $new);
   }
 
   // When a user changes the URL of the page the menu will need to be rebuilt.
   // Submitting the form lands the user right back here. This will also reset
   // the static cache as built in hook_menu().
   if ($rebuild_menu) {
-    menu_rebuild();
+    state_set('menu_rebuild_needed', TRUE);
   }
 
   // Prevent multiple static cache reset when menu is rebuilt, but do reset the
@@ -345,7 +336,7 @@ function agreement_has_agreed($account, $info) {
 
   // Check the user account data for the agreement.
   if (isset($account->data['agreement']) && isset($account->data['agreement'][$type])) {
-    return $info['settings']['frequency'] ? session_id() === $account->data['agreement'] : TRUE;
+    return $info['settings']['frequency']?session_id() === $account->data['agreement'] : TRUE;
   }
 
   $query = db_select('agreement');
@@ -394,13 +385,13 @@ function agreement_agree($account, $type, $agreed = 1) {
     ->execute();
 
   $edit = (object) array(
-    'uid'         => $account->uid,
-    'type'        => $type,
-    'agreed'      => $agreed,
-    'sid'         => session_id(),
+    'uid' => $account->uid,
+    'type' => $type,
+    'agreed' => $agreed,
+    'sid' => session_id(),
     'agreed_date' => REQUEST_TIME,
   );
-  drupal_write_record('agreement', $edit);
+  backdrop_write_record('agreement', $edit);
 }
 
 /**
@@ -424,19 +415,19 @@ function agreement_type_get_best_match($account, $path) {
   );
 
   // Get a list of pages to never display agreement on.
-  $exceptions = array_reduce($types, function (&$result, $item) {
+  $exceptions = array_reduce($types, function($result, $item){
     $result[] = $item['path'];
     return $result;
   }, $default_exceptions);
 
   $exception_string = implode("\n", $exceptions);
-  if (drupal_match_path($path, $exception_string)) {
+  if (backdrop_match_path($path, $exception_string)) {
     return FALSE;
   }
 
   // Reduce the agreement types based on the agreement restricted roles.
-  $account_roles = array_keys($account->roles);
-  $role_types = array_reduce($types, function (&$result, $item) use ($account) {
+  $account_roles = $account->roles;
+  $role_types = array_reduce($types, function($result, $item) use ($account){
     if (_agreement_user_has_role($account, $item['settings']['role'])) {
       $result[$item['name']] = $item;
     }
@@ -444,13 +435,15 @@ function agreement_type_get_best_match($account, $path) {
   }, array());
 
   // Try to find an agreement type that matches the path.
-  $info = array_reduce($role_types, function (&$result, $item) use ($path, $account) {
-    if ($result) {
+
+
+  $info = array_reduce($role_types, function ($result, $item) use($path, $account) {
+    if ($result){
       return $result;
     }
 
     $pattern = html_entity_decode(strtolower($item['settings']['visibility_pages']));
-    $has_match = drupal_match_path($path, $pattern);
+    $has_match = backdrop_match_path($path, $pattern);
     $has_agreed = agreement_has_agreed($account, $item);
     if (0 === (int) $item['settings']['visibility_settings'] && FALSE === $has_match && !$has_agreed) {
       // An agreement type exists that matches any page.
@@ -544,7 +537,7 @@ function _agreement_admin_form_submit($form, &$form_state) {
 
   // If they selected to force re-acceptance of the agreement for every user.
   if (!empty($form_state['values']['agreement_clear'])) {
-    variable_set('agreement_reset', time());
+    config_set('agreement.settings', 'agreement_reset', time());
   }
 }
 
@@ -574,7 +567,7 @@ function agreement_get_translated_message($name) {
  *   An array keyed by the "constant" name and value as the translated string.
  */
 function _agreement_get_translated_messages() {
-  $agreement_constants = &drupal_static(__FUNCTION__);
+  $agreement_constants = backdrop_static(__FUNCTION__);
 
   if (!isset($agreement_constants)) {
     $agreement_constants = array(
@@ -604,7 +597,17 @@ function _agreement_get_translated_messages() {
  *   TRUE if the user's roles intersect with the provided role ids.
  */
 function _agreement_user_has_role($account, $role_ids) {
-  $account_roles = array_keys($account->roles);
-
+  $account_roles = $account->roles;
   return !empty(array_intersect($role_ids, $account_roles));
+}
+
+/**
+ * Implements hook_config_info()
+ */
+function agreement_config_info() {
+  $prefixes['agreement.settings'] = array(
+    'label' => t('Agreement settings'),
+    'group' => t('Agreement'),
+  );
+  return $prefixes;
 }

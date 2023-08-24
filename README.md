@@ -39,3 +39,29 @@ user
 
 Additionally admin pages are not affected by the agreement.
 
+## Installation
+
+- Install this module using the official Backdrop CMS instructions at
+  https://backdropcms.org/guide/modules.
+
+## Issues
+
+Bugs and Feature requests should be reported in the Issue Queue:
+https://github.com/backdrop-contrib/agreement/issues.
+
+## Current Maintainers
+
+- [argiepiano](https://github.com/argiepiano).
+- Additional maintainers are welcomed.
+
+## Credits
+
+- Ported to Backdrop CMS by [argiepiano](https://github.com/argiepiano).
+- Originally written for Drupal by [yuriy.babenko](https://www.drupal.org/u/yuriybabenko).
+- Maintained for Drupal by [yuriy.babenko](https://www.drupal.org/u/yuriybabenko), [mradcliffe](https://www.drupal.org/u/mradcliffe) and [pagaille](https://www.drupal.org/u/pagaille)
+- Drupal version sponsored by [Kosada](https://www.drupal.org/kosada)
+
+## License
+
+This project is GPL v2 software.
+See the LICENSE.txt file in this directory for complete text.
