@@ -187,3 +187,12 @@ function agreement_update_1000() {
   update_variable_del('agreement_email_recipient');
   update_variable_del('agreement_reset');
 }
+
+/**
+ * Set the default role to 'authenticated' rather than '2'.
+ */
+function agreement_update_1001() {
+  if (config_get('agreement.settings', 'agreement_role') == '2') {
+    config_set('agreement.settings', 'agreement_role', BACKDROP_AUTHENTICATED_ROLE);
+  }
+}

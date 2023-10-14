@@ -6,7 +6,7 @@
       "value" : "",
       "format" : ""
     },
-    "agreement_role": "2",
+    "agreement_role": "authenticated",
     "agreement_frequency": "0",
     "agreement_message_success": "Thank you for accepting our agreement.",
     "agreement_message_failure": "You must accept our agreement to continue.",
