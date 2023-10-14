@@ -12,7 +12,7 @@ file = agreement.test
 
 [AgreementCustomUnprivilegedUserTestCase]
 name = Agreement page - custom settings
-description = Ensure that the default settings work properly for the end user.
+description = Ensure that custom settings work properly for the end user.
 group = Agreement
 file = agreement.test
 
