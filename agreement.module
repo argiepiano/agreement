@@ -443,7 +443,8 @@ function agreement_type_get_best_match($account, $path) {
     }
 
     $pattern = html_entity_decode(strtolower($item['settings']['visibility_pages']));
-    $has_match = backdrop_match_path($path, $pattern);
+    $normal_path = backdrop_get_normal_path($path);
+    $has_match = backdrop_match_path($path, $pattern) || backdrop_match_path($normal_path, $pattern);
     $has_agreed = agreement_has_agreed($account, $item);
     if (0 === (int) $item['settings']['visibility_settings'] && FALSE === $has_match && !$has_agreed) {
       // An agreement type exists that matches any page.
