@@ -26,14 +26,12 @@ class AgreementTestCase extends BackdropWebTestCase {
   public function setUp() {
     parent::setUp('agreement');
 
-    // TODO This variable was probably removed in Backdrop without replacement.
-    $this->siteName = ' | ' . variable_get('siteName', 'Backdrop');
+    $this->siteName = ' | ' . config_get('system.core', 'site_name');
     $this->pageTitle = $this->randomName(16);
     $this->pageText = $this->randomName(16);
     $this->notSet = $this->randomName(32);
 
     // Make a node with a title that is distinguishable when manually debugging
-
     // tests.
 
     $this->node = $this->backdropCreateNode(array(
@@ -65,7 +63,7 @@ class AgreementTestCase extends BackdropWebTestCase {
       'administer site configuration',
       'bypass node access',
     ));
-    $this->backdropLogin($this->privilegedUser);
+    $this->backdropAgreementLogin($this->privilegedUser);
   }
 
   /**
@@ -73,20 +71,20 @@ class AgreementTestCase extends BackdropWebTestCase {
    */
   protected function bypassUserLogin() {
     $this->bypassUser = $this->backdropCreateUser(array('bypass agreement'));
-    $this->backdropLogin($this->bypassUser);
+    $this->backdropAgreementLogin($this->bypassUser);
   }
 
   /**
    * Creates an unprivileged user and login as that user.
    *
    * @param string $destination
-   *   The destination parameter for ::backdropLogin().
+   *   The destination parameter for ::backdropAgreementLogin().
    */
   protected function unprivilegedUserLogin($destination = 'user') {
     // Create and log in our unprivileged user.
 
     $this->unprivilegedUser = $this->backdropCreateUser(array('access content'));
-    $this->backdropLogin($this->unprivilegedUser, $destination);
+    $this->backdropAgreementLogin($this->unprivilegedUser, $destination);
   }
 
   /**
@@ -184,7 +182,7 @@ class AgreementTestCase extends BackdropWebTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function backdropLogin(stdClass $user, $destination = 'user') {
+  protected function backdropAgreementLogin($user, $destination = 'user') {
     if ($this->loggedInUser) {
       $this->backdropLogout();
     }
@@ -196,7 +194,6 @@ class AgreementTestCase extends BackdropWebTestCase {
     $this->backdropPost($destination, $edit, t('Log in'));
 
     // If a "log out" link appears on the page, it is almost certainly because
-
     // the login was successful.
 
     $pass = $this->assertLink(t('Log out'), 0, t('User %name successfully logged in.', array('%name' => $user->name)), t('User login'));
@@ -212,18 +209,6 @@ class AgreementTestCase extends BackdropWebTestCase {
  * Tests agreement functionality with default use case and a privileged user.
  */
 class AgreementDefaultsPrivilegedUserTestCase extends AgreementTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '1. Agreement settings',
-      'description' => 'Ensure that the default settings work properly for the admin user.',
-      'group' => 'Agreement',
-    );
-  }
-
   /**
    * Tests the agreement page functionality.
    */
@@ -266,17 +251,6 @@ class AgreementDefaultsPrivilegedUserTestCase extends AgreementTestCase {
 class AgreementDefaultsUnprivilegedUserTestCase extends AgreementTestCase {
 
   /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '2. Agreement page - default settings',
-      'description' => 'Ensure that the default settings work properly for the end user.',
-      'group' => 'Agreement',
-    );
-  }
-
-  /**
    * Tests the agreement page for every page except the front page.
    */
   public function testAgreement() {
@@ -312,17 +286,6 @@ class AgreementDefaultsUnprivilegedUserTestCase extends AgreementTestCase {
  * Tests the agreement functionality with custom settings.
  */
 class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '3. Agreement page - custom settings',
-      'description' => 'Ensure that custom settings work properly for the end user.',
-      'group' => 'Agreement',
-    );
-  }
 
   /**
    * Tests the agreement page only on the front page.
@@ -370,7 +333,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
 
     // Log out, log back in, no agreement.
 
-    $this->backdropLogin($this->unprivilegedUser);
+    $this->backdropAgreementLogin($this->unprivilegedUser);
     $this->backdropGet('node');
     $this->isNotAgreementPage($this->agreement);
 
@@ -380,7 +343,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
     agreement_type_save($this->agreement);
     $this->agreement = agreement_type_load($this->agreement['name'], FALSE);
 
-    $this->backdropLogin($this->unprivilegedUser);
+    $this->backdropAgreementLogin($this->unprivilegedUser);
 
     // Go to front page, open agreement.
 
@@ -390,7 +353,7 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
 
     // Log out, log back in, open agreement.
 
-    $this->backdropLogin($this->unprivilegedUser);
+    $this->backdropAgreementLogin($this->unprivilegedUser);
     $this->backdropGet('node');
     $this->isAgreementPage($this->agreement);
 
@@ -494,17 +457,6 @@ class AgreementCustomUnprivilegedUserTestCase extends AgreementTestCase {
 class AgreementBypassUserTestCase extends AgreementTestCase {
 
   /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '4. Agreement page - bypass',
-      'description' => 'Ensure that user with bypass agreement will not see agreement page.',
-      'group' => 'Agreement',
-    );
-  }
-
-  /**
    * Tests that the agreement page is not displayed for the user.
    */
   public function testAgreement() {
@@ -525,17 +477,6 @@ class AgreementBypassUserTestCase extends AgreementTestCase {
  * Tests multiple agreement functionality.
  */
 class AgreementMultipleTestCase extends AgreementTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '5. Multiple agreements',
-      'description' => 'Ensure that multiple agreements functional together.',
-      'group' => 'Agreement',
-    );
-  }
 
   /**
    * Tests that multiple agreements can function independently.
@@ -602,7 +543,7 @@ class AgreementMultipleTestCase extends AgreementTestCase {
 
     // Remove the second agreement.
 
-    $this->backdropLogin($this->privilegedUser);
+    $this->backdropAgreementLogin($this->privilegedUser);
     $this->backdropPost('admin/config/people/agreement/manage/' . $settings['name'] . '/delete', array(), t('Confirm'));
     $agreement_type_delete_success = 'Successfully deleted agreement type, ' . $settings['type'];
     $this->assertText($agreement_type_delete_success, 'Found agreement type deleted message.');
@@ -616,17 +557,6 @@ class AgreementMultipleTestCase extends AgreementTestCase {
 class AgreementRevokeTestCase extends AgreementTestCase {
 
   protected $revokeUser;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => '6. Agreement page - revoke',
-      'description' => 'Tests the "revoke agreement" functionality',
-      'group' => 'Agreement',
-    );
-  }
 
   /**
    * Asserts that a user that has agreed can revoke the agreement.
@@ -671,7 +601,7 @@ class AgreementRevokeTestCase extends AgreementTestCase {
    */
   protected function revokeUserLogin($destination = 'user') {
     $this->revokeUser = $this->backdropCreateUser(array('access content', 'revoke own agreement'));
-    $this->backdropLogin($this->revokeUser, $destination);
+    $this->backdropAgreementLogin($this->revokeUser, $destination);
   }
 
 }
@@ -698,17 +628,6 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
   /**
    * {@inheritdoc}
    */
-  public static function getInfo() {
-    return array(
-      'name' => '7. Agreement page - Multiple roles',
-      'description' => 'Tests an agreement that applies to multiple roles.',
-      'group' => 'Agreement',
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function setUp() {
     parent::setUp();
 
@@ -719,7 +638,7 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
 
     // Set the agreement to use the roles from the two required users.
 
-    $this->backdropLogin($this->privilegedUser);
+    $this->backdropAgreementLogin($this->privilegedUser);
     $role_ids = array($this->requiredRole, $this->requiredSecondRole);
     $settings = array(
       'settings[role][]' => $role_ids,
@@ -822,7 +741,7 @@ class AgreementMultipleRoleTestCase extends AgreementTestCase {
       $this->fail('Exception thrown: ' . $e->getMessage());
     }
 
-    $this->backdropLogin($account);
+    $this->backdropAgreementLogin($account);
 
     return $account;
   }
