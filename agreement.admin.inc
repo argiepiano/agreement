@@ -130,7 +130,7 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
 
   $form['settings']['role'] = array(
     '#description' => t('Which users need to accept the agreement?'),
-    '#default_value' => !$is_new ? $info['settings']['role'] : BACKDROP_AUTHENTICATED_RID,
+    '#default_value' => !$is_new ? $info['settings']['role'] : BACKDROP_AUTHENTICATED_ROLE,
     '#options' => $role_options,
     '#required' => TRUE,
     '#title' => t('User role'),
