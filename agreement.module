@@ -211,42 +211,41 @@ function theme_agreement_page($variables) {
  *
  * @param string $name
  *   (Optional) An agreement type machine name to load.
- * @param bool $use_cache
- *   (Optional) Whether or not to load from cache or not.
+ * @param bool $use_static_cache
+ *   (Optional) Whether or not to load from the memory cache or not.
  *
  * @return array
  *   An associative array of agreement types keyed by the agreement type ID, or
  *   a single agreement type.
  */
-function agreement_type_load($name = NULL, $use_cache = TRUE) {
-  $agreement_types = backdrop_static(__FUNCTION__);
-
-  if (!$use_cache || !isset($agreement_types) || !is_array($agreement_types)) {
-    $types = array();
-    $query = db_select('agreement_type');
-    $query
-      ->fields('agreement_type')
-      ->orderBy('name');
-
-    $result = $query->execute();
-
-    if (!empty($result)) {
-      $types = $result->fetchAllAssoc('name', PDO::FETCH_ASSOC);
-
-      // Unserialize the type settings.
-      foreach ($types as $type_name => $type) {
-        $types[$type_name]['settings'] = unserialize($types[$type_name]['settings']);
+function agreement_type_load($name = NULL, $use_static_cache = TRUE) {
+  $cached_agreement_types = &backdrop_static(__FUNCTION__);
+  
+  if (!$use_static_cache || !isset($cached_agreement_types) || !is_array($cached_agreement_types)) {
+    // Try to use disk cache.
+    $cache = cache()->get('agreement_type');
+    if (empty($cache->data)) {
+      // Get all agreement_types.
+      $agreement_names = config_get_names_with_prefix('agreement_type.');
+      foreach ($agreement_names as $agreement_name) {
+        $data = config_get($agreement_name);
+        $cached_agreement_types[$data['name']] = $data;
       }
+      cache()->set('agreement_type', $cached_agreement_types);
     }
-
-    // Set the type(s) into static cache.
-    $agreement_types = $types;
+    else {
+      $cached_agreement_types = $cache->data;
+    }
   }
-  else {
-    $types = $agreement_types;
-  }
+  return !empty($cached_agreement_types) && isset($name) && isset($cached_agreement_types[$name]) ? $cached_agreement_types[$name] : $cached_agreement_types;
+}
 
-  return !empty($types) && isset($name) && isset($types[$name]) ? $types[$name] : $types;
+/**
+ * Clear disk and memory agreement_type caches.
+ */
+function agreement_cache_clear() {
+  cache()->delete('agreement_type');
+  backdrop_static_reset('agreement_type_load');
 }
 
 /**
@@ -261,15 +260,11 @@ function agreement_type_load($name = NULL, $use_cache = TRUE) {
  *   The agreement type that was saved after setting static cache.
  */
 function agreement_type_save($info, $rebuild_menu = FALSE) {
-  $new = (object) $info;
-  $new->settings = serialize($new->settings);
-
-  if (isset($new->id)) {
-    backdrop_write_record('agreement_type', $new, array('id'));
-  }
-  else {
-    backdrop_write_record('agreement_type', $new);
-  }
+  $config = config('agreement_type.' . $info['name']);
+  $config->setData($info);
+  $config->save();
+  // Clear the disk and static caches.
+  agreement_cache_clear();
 
   // When a user changes the URL of the page the menu will need to be rebuilt.
   // Submitting the form lands the user right back here. This will also reset
@@ -277,10 +272,7 @@ function agreement_type_save($info, $rebuild_menu = FALSE) {
   if ($rebuild_menu) {
     state_set('menu_rebuild_needed', TRUE);
   }
-
-  // Prevent multiple static cache reset when menu is rebuilt, but do reset the
-  // cache when menu is not rebuilt.
-  return agreement_type_load($new->name, !$rebuild_menu);
+  return $config->get();
 }
 
 /**
@@ -608,7 +600,12 @@ function _agreement_user_has_role($account, $role_ids) {
 function agreement_config_info() {
   $prefixes['agreement.settings'] = array(
     'label' => t('Agreement settings'),
-    'group' => t('Agreement'),
+    'group' => t('Configuration'),
+  );
+  $prefixes['agreement_type'] = array(
+    'name_key' => 'name',
+    'label_key' => 'type',
+    'group' => t('Agreement types'),
   );
   return $prefixes;
 }

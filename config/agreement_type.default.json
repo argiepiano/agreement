@@ -1,0 +1,25 @@
+{
+    "_config_name": "agreement_type.default",
+    "name": "default",
+    "type": "Default agreement",
+    "path": "agreement",
+    "settings": {
+        "role": [
+            "authenticated"
+        ],
+        "title": "Our Agreement",
+        "format": "filtered_html",
+        "frequency": 0,
+        "success": "Thank you for accepting our agreement.",
+        "failure": "You must accept our agreement to continue.",
+        "revoked": "You successfully revoked your acceptance of our agreement.",
+        "checkbox": "I agree.",
+        "submit": "Submit",
+        "destination": "",
+        "visibility_settings": 0,
+        "visibility_pages": "",
+        "email_recipient": "",
+        "reset_date": "0"
+    },
+    "agreement": ""
+}
