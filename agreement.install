@@ -49,11 +49,6 @@ function agreement_install() {
   if ($n <> 1) {
     backdrop_set_message(st('Could not set agreement module weight.'), 'error');
   }
-
-  // Add a default agreement.
-  $default = (object) _agreement_default_agreement();
-  $default->settings = serialize($default->settings);
-  backdrop_write_record('agreement_type', $default);
 }
 
 /**
