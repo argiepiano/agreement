@@ -619,11 +619,21 @@ function agreement_views_api() {
 /**
  * Provides an array of agreement type options.
  */
-function agreement_type_options() {
+function agreement_type_options($name = '') {
   $types = agreement_type_load();
   $options = array();
-  foreach ($types as $name => $type) {
-    $options[$name] = $type['type'];
+  foreach ($types as $agreement_name => $type) {
+    $options[$agreement_name] = $type['type'];
   }
-  return $options;
+  return empty($name) ? $options : (isset($options[$name]) ? $options[$name] : $name);
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function agreement_autoload_info() {
+  return array(
+    'AgreementViewsHandlerviewsFieldAgreementType' => 'views/AgreementViewsHandlerviewsFieldAgreementType.inc',
+    'AgreementViewsHandlerviewsFilterAgreementType' => 'views/AgreementViewsHandlerviewsFilterAgreementType.inc',
+  );
 }

@@ -77,21 +77,21 @@ function agreement_views_data() {
     'title' => t('Type'),
     'help' => t('The agreement type.'),
     'field' => array(
-      'handler' => 'views_handler_field_machine_name',
+      'handler' => 'AgreementViewsHandlerviewsFieldAgreementType',
       'click sortable' => TRUE,
       'options callback' => array(
         'agreement_type_options'
       ),
     ),
-    // 'sort' => array(
-    //   'handler' => 'views_handler_sort',
-    // ),
-    // 'filter' => array(
-    //   'handler' => 'teacher_handler_filter_teacher_type',
-    // ),
-    // 'argument' => array(
-    //   'handler' => 'views_handler_argument_string',
-    // ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'AgreementViewsHandlerviewsFilterAgreementType',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
   );
   
   $data['agreement']['agreed_date'] = array(
