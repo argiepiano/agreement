@@ -221,8 +221,8 @@ class AgreementDefaultsPrivilegedUserTestCase extends AgreementTestCase {
 
     // After save, re-open agreement settings.
 
-    $this->assertUrl('admin/config/people/agreement/manage/default', array(), t('URL of settings page is correct: !url', array('!url' => $this->getUrl())));
-    $this->assertTitle('Manage Agreement: Default agreement' . $this->siteName);
+    $this->assertUrl('admin/config/people/agreement', array(), t('URL of settings page is correct: !url', array('!url' => $this->getUrl())));
+    $this->assertTitle('Agreement settings' . $this->siteName);
 
     // Go to front page, no agreement.
 

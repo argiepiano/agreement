@@ -46,14 +46,19 @@ function agreement_type_overview() {
         'title' => t('Reset'),
         'href' => 'admin/config/people/agreement/manage/' . $name . '/reset',
       ),
-      'delete' => array(
+    );
+    if ($name != 'default') {
+      $operations['delete'] = array(
         'title' => t('Remove'),
         'href' => 'admin/config/people/agreement/manage/' . $name . '/delete',
-      ),
-    );
+      );
+    }
 
     $row[] = array(
-      'data' => theme('links', array('links' => $operations, 'attributes' => $operation_attributes)),
+      'data' => array(
+        '#type' => 'dropbutton',
+        '#links' => $operations,
+      ),
     );
     $rows[] = $row;
   }
@@ -85,13 +90,13 @@ function agreement_type_overview() {
 function agreement_settings_form($form, &$form_state, $info = NULL) {
   $config = config('agreement.settings');
 
-  $is_new = NULL === $info || !isset($info['id']);
+  $is_new = NULL === $info || !isset($info['name']);
   $form_state['is_new'] = $is_new;
   $destination = backdrop_get_destination();
 
   // Get a list of user role IDs without the anonymous user role.
   $role_options = user_roles();
-  unset($role_options[1]);
+  unset($role_options[BACKDROP_ANONYMOUS_ROLE]);
 
   if (!$is_new) {
     $form_state['agreement'] = $info;
@@ -264,18 +269,6 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
     '#type' => 'submit',
     '#value' => t('Save configuration'),
   );
-  $destination = agreement_settings_form_get_destination('admin/config/people/agreement');
-  $form['actions']['cancel'] = array(
-    '#options' => array(
-      'attributes' => array(),
-      'html' => FALSE,
-      'query' => $destination['query'],
-    ),
-    '#path' => $destination['path'],
-    '#text' => t('Cancel'),
-    '#theme' => 'link',
-    '#weight' => 10,
-  );
 
   // Provide delete button if not default agreement.
 
@@ -286,7 +279,11 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
       '#value' => t('Remove'),
     );
   }
-
+  $form['actions']['cancel'] = array(
+    '#type' => 'link',
+    '#href' => 'admin/config/people/agreement',
+    '#title' => t('Cancel'),
+  );
   return $form;
 }
 
@@ -386,12 +383,7 @@ function agreement_settings_form_submit($form, &$form_state) {
   $info = _agreement_extract_values_to_type($form_state['values']);
   $new = array_replace_recursive($form_state['agreement'], $info);
 
-  $destination = agreement_settings_form_get_destination('admin/config/people/agreement');
-  $options = array_intersect_key($destination, array('query' => array(), 'fragement' => array()));
-  $form_state['redirect'] = array($destination['path'], $options);
-
   // Rebuilds the menu cache if the path URL or page title changes.
-
   if ($is_new || $form_state['values']['path'] !== $form_state['agreement'] ||
       $form_state['values']['settings']['title'] !== $form_state['agreement']['settings']['title']) {
     $rebuild = TRUE;
@@ -400,6 +392,7 @@ function agreement_settings_form_submit($form, &$form_state) {
   $saved = agreement_type_save($new, $rebuild);
 
   backdrop_set_message(t('Agreement type %type saved successfully.', array('%type' => $saved['type'])));
+  $form_state['redirect'] = 'admin/config/people/agreement';
 }
 
 /**
@@ -469,7 +462,8 @@ function agreement_settings_form_delete($form, &$form_state) {
  *   The form array.
  */
 function agreement_type_delete_form($form, &$form_state, $info) {
-  $form_state['name'] = $info['type'];
+  $form_state['name'] = $info['name'];
+  $form_state['label'] = $info['type'];
 
   return confirm_form($form,
                t('Are you sure you want to delete this agreement type?'),
@@ -487,21 +481,20 @@ function agreement_type_delete_form($form, &$form_state, $info) {
  *   The form state array.
  */
 function agreement_type_delete_form_submit($form, &$form_state) {
+  
   try {
     $transaction = db_transaction();
-    db_delete('agreement_type')
-      ->condition('name', $form_state['build_info']['args']['0']['name'])
-      ->execute();
-
     db_delete('agreement')
-      ->condition('type', $form_state['build_info']['args']['0']['type'])
+      ->condition('type', $form_state['name'])
       ->execute();
 
-    backdrop_set_message(t('Successfully deleted agreement type, %name', array('%name' => $form_state['name'])));
-    $form_state['redirect'] = 'admin/config/people/agreement';
+    $config = config('agreement_type.' . $form_state['name']);
+    $config->delete();
 
-    agreement_type_load(NULL, FALSE);
-    menu_rebuild();
+    backdrop_set_message(t('Successfully deleted agreement type, %label', array('%label' => $form_state['label'])));
+    $form_state['redirect'] = 'admin/config/people/agreement';
+    agreement_cache_clear();
+    state_set('menu_rebuild_needed', TRUE);
   }
   catch (\PDOException $e) {
     $transaction->rollback();
