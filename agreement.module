@@ -605,3 +605,35 @@ function agreement_config_info() {
   );
   return $prefixes;
 }
+
+/**
+ * Implements hook_views_api().
+ */
+function agreement_views_api() {
+  return array(
+    'api' => 3,
+    'path' => backdrop_get_path('module', 'agreement') . '/views',
+  );
+}
+
+/**
+ * Provides an array of agreement type options.
+ */
+function agreement_type_options($name = '') {
+  $types = agreement_type_load();
+  $options = array();
+  foreach ($types as $agreement_name => $type) {
+    $options[$agreement_name] = $type['type'];
+  }
+  return empty($name) ? $options : (isset($options[$name]) ? $options[$name] : $name);
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function agreement_autoload_info() {
+  return array(
+    'AgreementViewsHandlerviewsFieldAgreementType' => 'views/AgreementViewsHandlerviewsFieldAgreementType.inc',
+    'AgreementViewsHandlerviewsFilterAgreementType' => 'views/AgreementViewsHandlerviewsFilterAgreementType.inc',
+  );
+}
