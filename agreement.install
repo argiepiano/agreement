@@ -161,18 +161,20 @@ function agreement_update_1001() {
  * Move agreement types to config.
  */
 function agreement_update_1002() {
-  $query = db_query("
-    SELECT agreement_type.*
-    FROM 
-    {agreement_type} agreement_type"
-  );
-  $types = $query->fetchAllAssoc('name', PDO::FETCH_ASSOC);
-  if (!empty($types)) {
-    foreach ($types as $name => $info) {
-      $info['settings'] = unserialize($info['settings']);
-      $config = config('agreement_type.' . $name);
-      $config->setData($info);
-      $config->save();
+  if (db_table_exists('agreement_type')) {
+    $query = db_query("
+      SELECT agreement_type.*
+      FROM 
+      {agreement_type} agreement_type"
+    );
+    $types = $query->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+    if (!empty($types)) {
+      foreach ($types as $name => $info) {
+        $info['settings'] = unserialize($info['settings']);
+        $config = config('agreement_type.' . $name);
+        $config->setData($info);
+        $config->save();
+      }
     }
   }
 }
