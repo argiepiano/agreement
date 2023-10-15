@@ -605,3 +605,25 @@ function agreement_config_info() {
   );
   return $prefixes;
 }
+
+/**
+ * Implements hook_views_api().
+ */
+function agreement_views_api() {
+  return array(
+    'api' => 3,
+    'path' => backdrop_get_path('module', 'agreement') . '/views',
+  );
+}
+
+/**
+ * Provides an array of agreement type options.
+ */
+function agreement_type_options() {
+  $types = agreement_type_load();
+  $options = array();
+  foreach ($types as $name => $type) {
+    $options[$name] = $type['type'];
+  }
+  return $options;
+}
