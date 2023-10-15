@@ -46,14 +46,11 @@ function agreement_type_overview() {
         'title' => t('Reset'),
         'href' => 'admin/config/people/agreement/manage/' . $name . '/reset',
       ),
-    );
-    if ($name != 'default') {
-      $operations['delete'] = array(
+      'delete' =>  array(
         'title' => t('Remove'),
         'href' => 'admin/config/people/agreement/manage/' . $name . '/delete',
-      );
-    }
-
+      ),
+    );
     $row[] = array(
       'data' => array(
         '#type' => 'dropbutton',
@@ -296,15 +293,14 @@ function agreement_settings_form($form, &$form_state, $info = NULL) {
  *   The form state array.
  */
 function agreement_path_validate($element, &$form_state) {
-  $path = db_select('agreement_type')
-    ->fields('agreement_type', array('path'))
-    ->condition('path', $element['#value'])
-    ->condition('name', $form_state['values']['name'], '<>')
-    ->execute()
-    ->fetchField(0);
+  $types = (array) agreement_type_load();
+  unset($types[$form_state['values']['name']]);
 
-  if ($path) {
-    form_error($element, t('Path in-use by another agreement.'));
+  foreach ($types as $type) {
+    if ($type['path'] == $element['#value']) {
+      form_error($element, t('Path in use by another agreement.'));
+      return;
+    }
   }
 
   if ($form_state['is_new'] || $form_state['agreement']['path'] !== $element['#value']) {
@@ -315,7 +311,7 @@ function agreement_path_validate($element, &$form_state) {
       ->fetchField(0);
 
     if ($router_item) {
-      form_error($element, t('Path in-use by system.'));
+      form_error($element, t('Path in use by system.'));
     }
   }
 }

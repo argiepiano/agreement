@@ -303,13 +303,9 @@ function agreement_type_edit_title($info) {
  *   TRUE if the agreement type exists.
  */
 function agreement_type_name_exists($name) {
-  $result = db_select('agreement_type')
-    ->condition('name', $name)
-    ->fields('agreement_type', array('name'))
-    ->execute()
-    ->fetchField();
-
-  return $result && $result === $name;
+  $types = (array) agreement_type_load();
+  $names = array_keys($types);
+  return in_array($name, $names);
 }
 
 /**
