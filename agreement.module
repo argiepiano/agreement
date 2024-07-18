@@ -221,7 +221,7 @@ function theme_agreement_page($variables) {
 function agreement_type_load($name = NULL, $use_static_cache = TRUE) {
   $cached_agreement_types = &backdrop_static(__FUNCTION__, array());
   
-  if (!$use_static_cache || !isset($cached_agreement_types) || !is_array($cached_agreement_types)) {
+  if (!$use_static_cache || empty($cached_agreement_types)) {
     // Try to use disk cache.
     $cache = cache()->get('agreement_type');
     if (empty($cache->data)) {
